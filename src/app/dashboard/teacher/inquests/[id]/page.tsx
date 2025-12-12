@@ -1,3 +1,4 @@
+// app/dashboard/teacher/inquests/[id]/page.tsx (client component)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -33,9 +34,7 @@ export default function TeacherInquestDetail() {
   const [inquest, setInquest] = useState<Inquest | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [pending, setPending] = useState(false);
-  const [form, setForm] = useState({
-    teacherClarification: "",
-  });
+  const [form, setForm] = useState({ teacherClarification: "" });
   const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -45,9 +44,7 @@ export default function TeacherInquestDetail() {
         if (!res.ok) throw new Error("Failed to load inquest");
         const data = await res.json();
         setInquest(data);
-        setForm({
-          teacherClarification: data.teacherClarification || "",
-        });
+        setForm({ teacherClarification: data.teacherClarification || "" });
         if (data.status === "PENDING") setShowForm(true);
       } catch {
         toast.error("Failed to load inquest");
@@ -99,35 +96,43 @@ export default function TeacherInquestDetail() {
 
   if (!inquest) {
     return (
-      <div className="mx-auto max-w-5xl py-16 px-6">
-        <div className="text-center text-xl text-slate-600">Loading inquest details...</div>
+      <div className="mx-auto max-w-6xl py-10 px-6">
+        <div className="text-center text-base text-slate-600">
+          Loading inquest details...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl py-12 px-6 space-y-10 font-['Noto_Sans_Arabic',sans-serif]">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-4xl font-extrabold text-slate-900">Inquest Details</h1>
-        <p className="mt-3 text-xl text-slate-700">View the inquest and submit your response if required.</p>
+    <div className="mx-auto max-w-6xl py-10 px-6 space-y-8 font-['Noto_Sans_Arabic',sans-serif]">
+      {/* Header */}
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-slate-900">Inquest Details</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          View the inquest and submit your response if required.
+        </p>
       </div>
 
-      {/* Main Card */}
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-teal-600 to-teal-700 px-10 py-8">
-          <div className="flex flex-wrap items-center justify-between gap-6">
+      {/* Card */}
+      <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-teal-600 to-teal-700 px-6 py-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3">
                 <span
-                  className={`px-6 py-3 rounded-full text-lg font-bold text-white ${
-                    inquest.inquestType === "ABSENT" ? "bg-orange-500/30" : "bg-red-500/30"
+                  className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${
+                    inquest.inquestType === "ABSENT"
+                      ? "bg-orange-500/40"
+                      : "bg-red-500/40"
                   }`}
                 >
-                  {inquest.inquestType === "ABSENT" ? "Absent Inquest" : "Negligence in Work"}
+                  {inquest.inquestType === "ABSENT"
+                    ? "Absent Inquest"
+                    : "Negligence in Work"}
                 </span>
                 <span
-                  className={`px-6 py-3 rounded-full text-lg font-bold ${
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     inquest.status === "PENDING"
                       ? "bg-yellow-100 text-yellow-800"
                       : inquest.status === "RESPONDED"
@@ -138,12 +143,14 @@ export default function TeacherInquestDetail() {
                   {inquest.status}
                 </span>
               </div>
-              <h2 className="mt-6 text-3xl font-extrabold text-white">{inquest.reason}</h2>
-              <p className="mt-3 text-lg text-teal-100">
+              <h2 className="mt-3 text-lg font-semibold text-white">
+                {inquest.reason}
+              </h2>
+              <p className="mt-1 text-xs text-teal-100">
                 Issued on{" "}
                 {new Date(inquest.createdAt).toLocaleDateString("en-US", {
                   year: "numeric",
-                  month: "long",
+                  month: "short",
                   day: "numeric",
                 })}
               </p>
@@ -151,11 +158,13 @@ export default function TeacherInquestDetail() {
           </div>
         </div>
 
-        <div className="p-10 space-y-10">
-          {/* Basic Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-lg">
+        <div className="p-6 space-y-6">
+          {/* Info grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
             <div>
-              <span className="font-semibold text-slate-700">Academic Year:</span>
+              <span className="font-semibold text-slate-700">
+                Academic Year:
+              </span>
               <p className="mt-1 text-slate-900">{inquest.academicYear.name}</p>
             </div>
             <div>
@@ -165,126 +174,178 @@ export default function TeacherInquestDetail() {
             {inquest.teacherJobTitle && (
               <div>
                 <span className="font-semibold text-slate-700">Job Title:</span>
-                <p className="mt-1 text-slate-900" dir="auto">{inquest.teacherJobTitle}</p>
+                <p className="mt-1 text-slate-900" dir="auto">
+                  {inquest.teacherJobTitle}
+                </p>
               </div>
             )}
             {inquest.teacherSpecialty && (
               <div>
-                <span className="font-semibold text-slate-700">Specialty:</span>
-                <p className="mt-1 text-slate-900" dir="auto">{inquest.teacherSpecialty}</p>
+                <span className="font-semibold text-slate-700">
+                  Specialty:
+                </span>
+                <p className="mt-1 text-slate-900" dir="auto">
+                  {inquest.teacherSpecialty}
+                </p>
               </div>
             )}
             {inquest.teacherSchool && (
               <div>
                 <span className="font-semibold text-slate-700">School:</span>
-                <p className="mt-1 text-slate-900" dir="auto">{inquest.teacherSchool}</p>
+                <p className="mt-1 text-slate-900" dir="auto">
+                  {inquest.teacherSchool}
+                </p>
               </div>
             )}
           </div>
 
-          {/* Section: Details & Requests */}
+          {/* Text sections */}
           {inquest.details && (
-            <div className="border-t pt-8">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Details / Follow-up</h3>
-              <p className="text-lg text-slate-700 leading-relaxed" dir="auto">{inquest.details}</p>
-            </div>
+            <section className="border-t pt-5">
+              <h3 className="text-base font-semibold text-slate-900 mb-2">
+                Details / Follow-up
+              </h3>
+              <p
+                className="text-sm text-slate-700 leading-relaxed"
+                dir="auto"
+              >
+                {inquest.details}
+              </p>
+            </section>
           )}
 
           {inquest.clarificationRequest && (
-            <div className="border-t pt-8">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Clarification Requested</h3>
-              <p className="text-lg text-slate-700 leading-relaxed" dir="auto">{inquest.clarificationRequest}</p>
-            </div>
+            <section className="border-t pt-5">
+              <h3 className="text-base font-semibold text-slate-900 mb-2">
+                Clarification Requested
+              </h3>
+              <p
+                className="text-sm text-slate-700 leading-relaxed"
+                dir="auto"
+              >
+                {inquest.clarificationRequest}
+              </p>
+            </section>
           )}
 
           {inquest.teacherClarification && (
-            <div className="border-t pt-8">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Your Submitted Clarification</h3>
-              <p className="text-lg text-slate-700 leading-relaxed" dir="auto">{inquest.teacherClarification}</p>
-            </div>
+            <section className="border-t pt-5">
+              <h3 className="text-base font-semibold text-slate-900 mb-2">
+                Your Submitted Clarification
+              </h3>
+              <p
+                className="text-sm text-slate-700 leading-relaxed"
+                dir="auto"
+              >
+                {inquest.teacherClarification}
+              </p>
+            </section>
           )}
 
           {inquest.attachmentUrl && (
-            <div className="border-t pt-8">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Attachment</h3>
+            <section className="border-t pt-5">
+              <h3 className="text-base font-semibold text-slate-900 mb-2">
+                Attachment
+              </h3>
               <a
                 href={inquest.attachmentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-xl font-semibold text-teal-600 hover:text-teal-700 hover:underline transition"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-teal-600 hover:text-teal-700 hover:underline transition"
               >
                 View Uploaded PDF →
               </a>
-            </div>
+            </section>
           )}
 
           {inquest.principalOpinion && (
-            <div className="border-t pt-8">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Principal's Opinion</h3>
-              <p className="text-lg text-slate-700 leading-relaxed" dir="auto">{inquest.principalOpinion}</p>
-            </div>
+            <section className="border-t pt-5">
+              <h3 className="text-base font-semibold text-slate-900 mb-2">
+                Principal&apos;s Opinion
+              </h3>
+              <p
+                className="text-sm text-slate-700 leading-relaxed"
+                dir="auto"
+              >
+                {inquest.principalOpinion}
+              </p>
+            </section>
           )}
 
           {inquest.decisionText && (
-            <div className="border-t pt-8 bg-teal-50 rounded-2xl p-8">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">Final Decision</h3>
-              <p className="text-xl font-semibold text-teal-800 leading-relaxed" dir="auto">{inquest.decisionText}</p>
-            </div>
+            <section className="border-t pt-5 bg-teal-50 rounded-xl p-5">
+              <h3 className="text-base font-semibold text-slate-900 mb-2">
+                Final Decision
+              </h3>
+              <p
+                className="text-sm font-semibold text-teal-800 leading-relaxed"
+                dir="auto"
+              >
+                {inquest.decisionText}
+              </p>
+            </section>
           )}
 
-          {/* Response Form */}
+          {/* Response form */}
           {showForm && inquest.status === "PENDING" && (
-            <div className="border-t pt-10 mt-10">
-              <h3 className="text-2xl font-bold text-slate-900 mb-8">Submit Your Response</h3>
-              <form onSubmit={handleSubmit} className="space-y-8">
+            <section className="border-t pt-6 mt-2">
+              <h3 className="text-base font-semibold text-slate-900 mb-4">
+                Submit Your Response
+              </h3>
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-lg font-semibold text-slate-800 mb-3">
+                  <label className="block text-sm font-semibold text-slate-800 mb-2">
                     Your Clarification / Response
                   </label>
                   <textarea
                     value={form.teacherClarification}
                     onChange={(e) =>
-                      setForm((f) => ({ ...f, teacherClarification: e.target.value }))
+                      setForm((f) => ({
+                        ...f,
+                        teacherClarification: e.target.value,
+                      }))
                     }
                     required
-                    rows={6}
-                    className="w-full rounded-2xl border-2 border-slate-300 px-6 py-4 text-base focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition"
+                    rows={5}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
                     placeholder="Provide a detailed explanation or clarification..."
                     dir="auto"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-lg font-semibold text-slate-800 mb-3">
+                  <label className="block text-sm font-semibold text-slate-800 mb-2">
                     Upload Supporting Document (PDF)
                   </label>
                   <input
                     type="file"
                     accept="application/pdf"
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="w-full file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-teal-600 file:text-white hover:file:bg-teal-700 cursor-pointer"
+                    className="w-full text-sm file:mr-3 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-600 file:text-white hover:file:bg-teal-700 cursor-pointer"
                   />
-                  <p className="mt-2 text-sm text-slate-600">e.g., medical certificate, sick leave, etc.</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    e.g., medical certificate, sick leave, etc.
+                  </p>
                 </div>
 
-                <div className="flex justify-end gap-5">
+                <div className="flex justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="px-8 py-4 text-lg font-semibold text-slate-700 hover:text-slate-900 transition"
+                    className="px-5 py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={pending}
-                    className="rounded-xl bg-teal-600 px-10 py-4 text-lg font-bold text-white shadow-xl hover:bg-teal-700 hover:shadow-2xl disabled:opacity-60 transition"
+                    className="rounded-lg bg-teal-600 px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-teal-700 hover:shadow-lg disabled:opacity-60 transition"
                   >
                     {pending ? "Submitting..." : "Submit Response"}
                   </button>
                 </div>
               </form>
-            </div>
+            </section>
           )}
         </div>
       </div>

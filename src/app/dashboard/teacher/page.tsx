@@ -1,3 +1,4 @@
+// app/dashboard/teacher/page.tsx
 import { LatestNotificationModal } from "@/components/LatestNotificationModal";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
@@ -10,41 +11,63 @@ export default async function TeacherHome() {
     redirect("/login");
   }
 
+  const cards = [
+    {
+      name: "My Inquests",
+      href: "/dashboard/teacher/inquests",
+      description: "View all inquests issued to you.",
+      icon: "📋",
+    },
+    {
+      name: "Notifications",
+      href: "/dashboard/notifications",
+      description: "Stay updated with important alerts.",
+      icon: "🔔",
+    },
+  ];
+
   return (
-    <div className="mx-auto max-w-5xl py-16 px-6">
-      <div>
-        <h1 className="text-4xl font-extrabold text-slate-900">
-          Welcome back, {session.user.name}!
+    <div className="mx-auto max-w-6xl py-10 px-6">
+      {/* Header */}
+      <div className="mb-10 text-center">
+        <h1 className="text-3xl font-bold text-slate-900">
+          Welcome back, {session.user.name}
         </h1>
-        <p className="mt-4 text-xl text-slate-700">Here's an overview of your account.</p>
+        <p className="mt-3 text-base text-slate-600">
+          Select a module to manage your daily tasks.
+        </p>
       </div>
 
-      <div className="mt-12 grid gap-12 md:grid-cols-2">
-        <Link
-          href="/dashboard/teacher/inquests"
-          className="rounded-3xl bg-white p-12 shadow-2xl border border-slate-200 hover:shadow-3xl hover:border-teal-500 transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-3xl font-extrabold text-slate-900">My Inquests</h3>
-              <p className="mt-6 text-xl text-slate-700">View all inquests issued to you</p>
+      {/* Cards Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {cards.map((card) => (
+          <Link
+            key={card.name}
+            href={card.href}
+            className="group block rounded-2xl bg-white p-6 shadow-md border border-slate-200 hover:shadow-lg hover:border-teal-400 transition-all duration-300"
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100 text-2xl group-hover:bg-teal-200 transition">
+                {card.icon}
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  {card.name}
+                </h2>
+                <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                  {card.description}
+                </p>
+              </div>
             </div>
-            <span className="text-7xl">📋</span>
-          </div>
-        </Link>
 
-        <Link
-          href="/dashboard/notifications"
-          className="rounded-3xl bg-white p-12 shadow-2xl border border-slate-200 hover:shadow-3xl hover:border-teal-500 transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-3xl font-extrabold text-slate-900">Notifications</h3>
-              <p className="mt-6 text-xl text-slate-700">Stay updated with important alerts</p>
+            <div className="mt-6 flex items-center text-sm font-medium text-teal-600 group-hover:text-teal-700">
+              <span>Open module</span>
+              <span className="ml-2 transition-transform group-hover:translate-x-1">
+                →
+              </span>
             </div>
-            <span className="text-7xl">🔔</span>
-          </div>
-        </Link>
+          </Link>
+        ))}
       </div>
 
       <LatestNotificationModal />
