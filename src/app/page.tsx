@@ -1,63 +1,124 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
+export default function HomePage() {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleGetStarted = () => {
+    if (session?.user) router.push("/dashboard");
+    else signIn(undefined, { callbackUrl: "/dashboard" });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-white via-sky-50 to-teal-50">
+      {/* Navbar */}
+      <header className="border-b border-slate-200 bg-white/95 backdrop-blur-sm shadow-sm">
+        <div className="mx-auto max-w-7xl px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center text-xl font-bold shadow-lg">
+              SM
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">School Manager</h1>
+              <p className="text-sm text-slate-600">For Al Forqan School</p>
+            </div>
+          </div>
+
+          <p className="hidden lg:block text-sm text-slate-600 max-w-md text-center">
+            Streamlined dashboards for admins and teachers to manage classes, inquests, schedules, and notifications in one place.
           </p>
+
+          <div className="flex items-center gap-5">
+            <button className="relative p-3 rounded-full hover:bg-slate-100 transition">
+              <span className="text-2xl">🔔</span>
+              <span className="absolute top-1 right-1 h-5 w-5 rounded-full bg-rose-500 text-xs text-white flex items-center justify-center font-bold">
+                0
+              </span>
+            </button>
+
+            {session?.user ? (
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="font-semibold text-slate-900">{session.user.name}</p>
+                  <p className="text-xs text-slate-600">{session.user.role}</p>
+                </div>
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-teal-700 hover:shadow-xl transition"
+                >
+                  Dashboard
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleGetStarted}
+                className="rounded-xl bg-teal-600 px-8 py-3 text-base font-semibold text-white shadow-lg hover:bg-teal-700 hover:shadow-xl transition"
+              >
+                Sign in
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      {/* Hero Section */}
+      <main className="flex-1 py-20 px-6">
+        <div className="mx-auto max-w-7xl grid lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight">
+              One platform for all your school management needs.
+            </h1>
+            <p className="mt-8 text-lg text-slate-700 leading-relaxed">
+              Admins can manage teachers, inquests, and schedules, while teachers receive clear notifications and a focused daily dashboard.
+            </p>
+            <div className="mt-10 flex flex-wrap gap-5">
+              <button
+                onClick={handleGetStarted}
+                className="rounded-xl bg-teal-600 px-8 py-4 text-lg font-bold text-white shadow-xl hover:bg-teal-700 hover:scale-105 transition"
+              >
+                Go to Dashboard
+              </button>
+              <button className="rounded-xl border-2 border-slate-300 px-8 py-4 text-lg font-bold text-slate-800 hover:border-teal-600 hover:bg-teal-50 transition">
+                Learn more
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-3xl bg-white shadow-2xl border border-slate-200 p-10 hover:shadow-3xl transition">
+            <p className="text-lg font-bold text-slate-800 mb-8">Feature Preview</p>
+            <div className="space-y-8">
+              <div className="flex gap-6">
+                <div className="h-16 w-16 rounded-2xl bg-teal-100 flex items-center justify-center text-4xl">
+                  📋
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Teachers Inquests</h3>
+                  <p className="text-slate-700 mt-1">Quickly create, track, and review inquests per teacher and academic year.</p>
+                </div>
+              </div>
+              <div className="flex gap-6">
+                <div className="h-16 w-16 rounded-2xl bg-sky-100 flex items-center justify-center text-4xl">
+                  🧑‍🏫
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Teacher Dashboard</h3>
+                  <p className="text-slate-700 mt-1">Teachers see alerts, inquests, and daily tasks in one view.</p>
+                </div>
+              </div>
+              <div className="flex gap-6">
+                <div className="h-16 w-16 rounded-2xl bg-amber-100 flex items-center justify-center text-4xl">
+                  🔔
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Smart Notifications</h3>
+                  <p className="text-slate-700 mt-1">New inquests become notifications for the relevant teacher.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>
