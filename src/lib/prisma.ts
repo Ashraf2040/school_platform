@@ -1,6 +1,6 @@
 // src/lib/prisma.ts
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaPg } from "@prisma/adapter-pg"; // Correct import: PrismaPg, not PrismaPostgreSQL
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
