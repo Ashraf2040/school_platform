@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { uploadFile } from "@/lib/upload";
+import { headers } from "next/headers";
+import { AnnouncementType } from "@prisma/client";
 
 export type AnnouncementFormState = {
   message: string;
@@ -25,12 +27,15 @@ export async function createAnnouncement(
     const body = formData.get("body") as string;
     const date = new Date(formData.get("date") as string);
 
-    const rawType = formData.get("type");
-    console.log("RAW TYPE FROM FORM:", rawType); // ← see what actually arrives
+    // Read ?type=... from the request URL instead of relying on the hidden input
+   const hdrs = await headers();        // ✅ await here
+const referrer = hdrs.get("referer") ?? "";
 
-    // Default to GENERAL if anything is missing/empty
-    let typeEnum: "GENERAL" | "TARGETED" = "GENERAL";
-    if (rawType === "targeted") typeEnum = "TARGETED";
+    const url = new URL(referrer);
+    const queryType = url.searchParams.get("type");
+
+    let typeEnum: AnnouncementType = "GENERAL";
+    if (queryType === "targeted") typeEnum = "TARGETED";
 
     const teacherIdsRaw = formData.getAll("teacherIds");
     const teacherIds = teacherIdsRaw.map((id) => id as string);
@@ -65,7 +70,7 @@ export async function createAnnouncement(
 
     return { message: "", success: true };
   } catch (err) {
-    console.error(err);
+    console.error("createAnnouncement ERROR", err);
     return { message: "Failed to create announcement", success: false };
   }
 }
