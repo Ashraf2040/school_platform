@@ -1,19 +1,31 @@
 // src/components/DashboardNavbar.tsx
 import Link from "next/link";
-import { SignOutButton } from "@/components/SignOutButton";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { prisma } from "@/lib/prisma"; // ← Adjust path if needed
 import { ProfileDropdown } from "./ProfileDropdown";
-
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
+import { NotificationDropdown } from "./NotificationDropdown";
 
 async function getUnreadCount(userId: string) {
   return prisma.notification.count({
     where: { userId, read: false },
+  });
+}
+
+async function getRecentNotifications(userId: string) {
+  return prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: {
+      id: true,
+      title: true,
+      body: true,
+      link: true,
+      read: true,
+      createdAt: true,
+      inquestId: true,
+    },
   });
 }
 
@@ -22,6 +34,8 @@ export async function DashboardNavbar() {
   if (!session?.user) return null;
 
   const unreadCount = await getUnreadCount(session.user.id);
+  const recentNotifications = await getRecentNotifications(session.user.id);
+
   const role = session.user.role;
 
   const initials = session.user.name
@@ -82,19 +96,10 @@ export async function DashboardNavbar() {
 
         {/* Right: Notifications + Profile */}
         <div className="flex items-center gap-3">
-          {/* Notification Bell */}
-          <Link
-            href="/dashboard/notifications"
-            className="relative inline-flex items-center justify-center h-9 w-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-            title="Notifications"
-          >
-            <span className="text-lg">🔔</span>
-            {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-red-500 text-[10px] text-white font-bold flex items-center justify-center shadow">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </Link>
+          <NotificationDropdown
+            unreadCount={unreadCount}
+            recentNotifications={recentNotifications}
+          />
 
           <ProfileDropdown
             name={session.user.name || "User"}

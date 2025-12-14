@@ -12,6 +12,13 @@ export default function AdminHome() {
       description: "Manage teacher accounts and assignments.",
       icon: "🧑‍🏫",
     },
+   
+{
+  name: "Announcements",
+  href: "/dashboard/admin/announcements",
+  description: "Create and send announcements to teachers.",
+  icon: "📢",
+},
     // Add more cards here in the future
   ];
 

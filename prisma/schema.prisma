@@ -41,6 +41,10 @@ classes          ClassOnTeacher[]
 // Many-to-many: Teachers teach multiple subjects
 subjects         SubjectOnTeacher[]
 passwordResetTokens PasswordResetToken[]
+
+announcements Announcement[] @relation("AnnouncementsCreated")
+
+announcementRecipients AnnouncementRecipient[]
 }
 
 model Teacher {
@@ -160,4 +164,40 @@ model AcademicYear {
   isCurrent Boolean  @default(false)
 
   inquests  Inquest[]
+}
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  attachmentUrl String? // optional file (PDF, image, etc.)
+  date        DateTime // the date the announcement is for / published on
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Who created it (always an admin)
+  createdBy   User     @relation("AnnouncementsCreated", fields: [createdById], references: [id])
+  createdById String
+
+  // Targeting
+  type        AnnouncementType @default(GENERAL) // GENERAL or TARGETED
+
+  // Relations
+  recipients  AnnouncementRecipient[] // many-to-many with read status
+}
+
+enum AnnouncementType {
+  GENERAL   // visible to ALL teachers
+  TARGETED  // visible only to selected teachers/subjects
+}
+
+model AnnouncementRecipient {
+  id               String   @id @default(cuid())
+  announcement     Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  announcementId   String
+  teacher          User     @relation(fields: [teacherId], references: [id])
+  teacherId        String
+  read             Boolean  @default(false)
+  readAt           DateTime?
+
+  @@unique([announcementId, teacherId])
 }

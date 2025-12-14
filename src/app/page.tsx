@@ -2,60 +2,60 @@
 
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function HomePage() {
   const { data: session } = useSession();
   const router = useRouter();
 
   const handleGetStarted = () => {
-    if (session?.user) router.push("/dashboard");
-    else signIn(undefined, { callbackUrl: "/dashboard" });
+    if (session?.user) {
+      const role = session.user.role?.toLowerCase() || "teacher";
+      router.push(`/dashboard/${role}`);
+    } else {
+      signIn(undefined, { callbackUrl: "/dashboard" });
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-white via-sky-50 to-teal-50">
-      {/* Navbar */}
-      <header className="border-b border-slate-200 bg-white/95 backdrop-blur-sm shadow-sm">
-        <div className="mx-auto max-w-7xl px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center text-xl font-bold shadow-lg">
+      {/* Updated Navbar - matched to DashboardNavbar style */}
+      <header className="border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto max-w-7xl px-4 py-2.5 flex items-center justify-between gap-4">
+          {/* Left: Logo + Title */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="h-10 w-10 rounded-xl bg-teal-600 text-white flex items-center justify-center text-lg font-bold shadow group-hover:bg-teal-700 transition">
               SM
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">School Manager</h1>
-              <p className="text-sm text-slate-600">For Al Forqan School</p>
+            <div className="leading-tight">
+              <p className="text-sm font-bold text-slate-900 group-hover:text-teal-700 transition">
+                School Manager
+              </p>
+              <p className="text-[11px] text-slate-600">For Al Forqan School</p>
             </div>
-          </div>
+          </Link>
 
+          {/* Middle: Description (hidden on small screens) */}
           <p className="hidden lg:block text-sm text-slate-600 max-w-md text-center">
             Streamlined dashboards for admins and teachers to manage classes, inquests, schedules, and notifications in one place.
           </p>
 
-          <div className="flex items-center gap-5">
-            <button className="relative p-3 rounded-full hover:bg-slate-100 transition">
-              <span className="text-2xl">🔔</span>
-              <span className="absolute top-1 right-1 h-5 w-5 rounded-full bg-rose-500 text-xs text-white flex items-center justify-center font-bold">
-                0
-              </span>
-            </button>
-
+          {/* Right: Sign In / Dashboard */}
+          <div className="flex items-center gap-3">
             {session?.user ? (
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="font-semibold text-slate-900">{session.user.name}</p>
-                  <p className="text-xs text-slate-600">{session.user.role}</p>
-                </div>
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  className="rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-teal-700 hover:shadow-xl transition"
-                >
-                  Dashboard
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  const role = session.user.role?.toLowerCase() || "teacher";
+                  router.push(`/dashboard/${role}`);
+                }}
+                className="rounded-full bg-teal-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-teal-700 transition"
+              >
+                Dashboard
+              </button>
             ) : (
               <button
                 onClick={handleGetStarted}
-                className="rounded-xl bg-teal-600 px-8 py-3 text-base font-semibold text-white shadow-lg hover:bg-teal-700 hover:shadow-xl transition"
+                className="rounded-full bg-teal-600 px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-teal-700 transition"
               >
                 Sign in
               </button>
@@ -64,20 +64,20 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="flex-1 py-20 px-6">
-        <div className="mx-auto max-w-7xl grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight">
+      {/* Enhanced Hero Section - better responsiveness, larger text on big screens, animations */}
+      <main className="flex-1 py-12 px-6 md:py-20 lg:py-28">
+        <div className="mx-auto max-w-7xl grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div className="text-center lg:text-left">
+            <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-6xl font-extrabold text-slate-900 leading-tight animate-fade-in">
               One platform for all your school management needs.
             </h1>
-            <p className="mt-8 text-lg text-slate-700 leading-relaxed">
+            <p className="mt-6 md:mt-8 text-base sm:text-lg md:text-xl text-slate-700 leading-relaxed animate-fade-in-delay">
               Admins can manage teachers, inquests, and schedules, while teachers receive clear notifications and a focused daily dashboard.
             </p>
-            <div className="mt-10 flex flex-wrap gap-5">
+            <div className="mt-8 md:mt-12 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-delay-2">
               <button
                 onClick={handleGetStarted}
-                className="rounded-xl bg-teal-600 px-8 py-4 text-lg font-bold text-white shadow-xl hover:bg-teal-700 hover:scale-105 transition"
+                className="rounded-xl bg-teal-600 px-8 py-4 text-lg font-bold text-white shadow-xl hover:bg-teal-700 hover:scale-105 transition transform"
               >
                 Go to Dashboard
               </button>
@@ -87,11 +87,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white shadow-2xl border border-slate-200 p-10 hover:shadow-3xl transition">
+          {/* Feature Preview Card - with subtle hover animation */}
+          <div className="rounded-3xl bg-white shadow-2xl border border-slate-200 p-8 md:p-10 hover:shadow-3xl hover:-translate-y-2 transition-all duration-500">
             <p className="text-lg font-bold text-slate-800 mb-8">Feature Preview</p>
             <div className="space-y-8">
-              <div className="flex gap-6">
-                <div className="h-16 w-16 rounded-2xl bg-teal-100 flex items-center justify-center text-4xl">
+              <div className="flex gap-6 opacity-0 animate-fade-up delay-1">
+                <div className="h-16 w-16 rounded-2xl bg-teal-100 flex items-center justify-center text-4xl flex-shrink-0">
                   📋
                 </div>
                 <div>
@@ -99,8 +100,8 @@ export default function HomePage() {
                   <p className="text-slate-700 mt-1">Quickly create, track, and review inquests per teacher and academic year.</p>
                 </div>
               </div>
-              <div className="flex gap-6">
-                <div className="h-16 w-16 rounded-2xl bg-sky-100 flex items-center justify-center text-4xl">
+              <div className="flex gap-6 opacity-0 animate-fade-up delay-2">
+                <div className="h-16 w-16 rounded-2xl bg-sky-100 flex items-center justify-center text-4xl flex-shrink-0">
                   🧑‍🏫
                 </div>
                 <div>
@@ -108,8 +109,8 @@ export default function HomePage() {
                   <p className="text-slate-700 mt-1">Teachers see alerts, inquests, and daily tasks in one view.</p>
                 </div>
               </div>
-              <div className="flex gap-6">
-                <div className="h-16 w-16 rounded-2xl bg-amber-100 flex items-center justify-center text-4xl">
+              <div className="flex gap-6 opacity-0 animate-fade-up delay-3">
+                <div className="h-16 w-16 rounded-2xl bg-amber-100 flex items-center justify-center text-4xl flex-shrink-0">
                   🔔
                 </div>
                 <div>
@@ -121,6 +122,35 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+
+      {/* Simple CSS animations (add to your globals.css or a <style> tag) */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fadeIn 1s ease-out forwards;
+        }
+        .animate-fade-in-delay {
+          animation: fadeIn 1s ease-out 0.3s forwards;
+          opacity: 0;
+        }
+        .animate-fade-in-delay-2 {
+          animation: fadeIn 1s ease-out 0.6s forwards;
+          opacity: 0;
+        }
+        .animate-fade-up {
+          animation: fadeUp 0.8s ease-out forwards;
+        }
+        .delay-1 { animation-delay: 0.2s; opacity: 0; }
+        .delay-2 { animation-delay: 0.4s; opacity: 0; }
+        .delay-3 { animation-delay: 0.6s; opacity: 0; }
+      `}</style>
     </div>
   );
 }

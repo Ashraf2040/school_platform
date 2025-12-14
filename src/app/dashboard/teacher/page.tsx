@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
+import { UnreadAnnouncementModal } from "@/components/UnreadAnnouncementModal";
 
 export default async function TeacherHome() {
   const session = await getServerSession(authOptions);
@@ -24,6 +25,12 @@ export default async function TeacherHome() {
       description: "Stay updated with important alerts.",
       icon: "🔔",
     },
+    {
+    name: "Announcements",
+    href: "/dashboard/teacher/announcements",
+    description: "View all school announcements.",
+    icon: "📢",
+  },
   ];
 
   return (
@@ -70,7 +77,7 @@ export default async function TeacherHome() {
         ))}
       </div>
 
-      <LatestNotificationModal />
+      <UnreadAnnouncementModal />
     </div>
   );
 }
