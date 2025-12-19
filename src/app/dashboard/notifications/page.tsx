@@ -41,14 +41,14 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl py-16 px-6 text-center">
+      <div className="mx-auto max-w-4xl py-16 px-6 text-center">
         <p className="text-lg font-medium text-slate-700">Loading notifications...</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl py-8 px-6 space-y-8">
+    <div className="mx-auto max-w-7xl py-8 px-6 space-y-8">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-slate-900">Notifications</h1>

@@ -18,44 +18,67 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-white via-sky-50 to-teal-50">
-      {/* Updated Navbar - matched to DashboardNavbar style */}
-      <header className="border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-4 py-2.5 flex items-center justify-between gap-4">
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
+      {/* Background Gradients + Subtle Dot Grid */}
+      <div className="absolute inset-0 -z-10">
+        {/* Main gradient layers */}
+        <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-teal-50 to-emerald-50" />
+        <div className="absolute inset-0 bg-gradient-to-tl from-teal-200/30 via-transparent to-sky-200/30" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-100/20 via-transparent to-transparent" />
+
+        {/* Subtle dot grid */}
+        <svg className="absolute inset-0 w-full h-full">
+          <defs>
+            <pattern id="dotGrid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="20" cy="20" r="1.5" fill="#14b8a6" opacity="0.15" />
+            </pattern>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="url(#dotGrid)" />
+        </svg>
+
+        {/* Floating gradient blobs */}
+        <div className="absolute top-10 left-10 w-96 h-96 bg-teal-400/30 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-sky-400/30 rounded-full blur-3xl animate-float-delay" />
+        <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-emerald-400/20 rounded-full blur-3xl animate-float-delay-2" />
+      </div>
+
+      {/* Full-width Glass Header - No shadow, edge-to-edge */}
+      <header className="relative z-10 border-b border-white/20 bg-white/10 backdrop-blur-xl">
+        <div className="px-6 py-5 md:px-12 lg:px-20 flex items-center justify-between gap-8">
           {/* Left: Logo + Title */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="h-10 w-10 rounded-xl bg-teal-600 text-white flex items-center justify-center text-lg font-bold shadow group-hover:bg-teal-700 transition">
+          <Link href="/" className="flex items-center gap-4 group">
+            <div className="h-12 w-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center text-2xl font-extrabold group-hover:bg-teal-700 group-hover:scale-105 transition-all duration-300">
               SM
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-bold text-slate-900 group-hover:text-teal-700 transition">
+              <p className="text-lg font-extrabold text-slate-800 group-hover:text-teal-700 transition">
                 School Manager
               </p>
-              <p className="text-[11px] text-slate-600">For Al Forqan School</p>
+              <p className="text-xs text-slate-600">For Al Forqan School</p>
             </div>
           </Link>
 
-          {/* Middle: Description (hidden on small screens) */}
-          <p className="hidden lg:block text-sm text-slate-600 max-w-md text-center">
+          {/* Middle: Tagline */}
+          <p className="hidden lg:block text-sm font-medium text-slate-700 max-w-lg text-center opacity-90">
             Streamlined dashboards for admins and teachers to manage classes, inquests, schedules, and notifications in one place.
           </p>
 
-          {/* Right: Sign In / Dashboard */}
-          <div className="flex items-center gap-3">
+          {/* Right: CTA Button */}
+          <div className="flex items-center">
             {session?.user ? (
               <button
                 onClick={() => {
                   const role = session.user.role?.toLowerCase() || "teacher";
                   router.push(`/dashboard/${role}`);
                 }}
-                className="rounded-full bg-teal-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-teal-700 transition"
+                className="rounded-xl bg-teal-600 px-7 py-3 text-base font-bold text-white hover:bg-teal-700 hover:shadow-xl hover:scale-105 transition-all duration-300"
               >
                 Dashboard
               </button>
             ) : (
               <button
                 onClick={handleGetStarted}
-                className="rounded-full bg-teal-600 px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-teal-700 transition"
+                className="rounded-xl bg-teal-600 px-8 py-3.5 text-base font-bold text-white hover:bg-teal-700 hover:shadow-xl hover:scale-105 transition-all duration-300"
               >
                 Sign in
               </button>
@@ -64,58 +87,58 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Enhanced Hero Section - better responsiveness, larger text on big screens, animations */}
-      <main className="flex-1 py-12 px-6 md:py-20 lg:py-28">
-        <div className="mx-auto max-w-7xl grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      {/* Hero Section */}
+      <main className="flex-1 py-16 px-6 md:py-24 lg:py-32 relative z-10">
+        <div className="mx-auto w-full max-w-7xl grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <div className="text-center lg:text-left">
-            <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-6xl font-extrabold text-slate-900 leading-tight animate-fade-in">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight drop-shadow-lg">
               One platform for all your school management needs.
             </h1>
-            <p className="mt-6 md:mt-8 text-base sm:text-lg md:text-xl text-slate-700 leading-relaxed animate-fade-in-delay">
+            <p className="mt-8 md:mt-12 text-lg sm:text-xl lg:text-2xl text-slate-700 leading-relaxed max-w-3xl mx-auto lg:mx-0 opacity-95">
               Admins can manage teachers, inquests, and schedules, while teachers receive clear notifications and a focused daily dashboard.
             </p>
-            <div className="mt-8 md:mt-12 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-delay-2">
+            <div className="mt-12 md:mt-16 flex flex-col sm:flex-row gap-6 justify-center lg:justify-start">
               <button
                 onClick={handleGetStarted}
-                className="rounded-xl bg-teal-600 px-8 py-4 text-lg font-bold text-white shadow-xl hover:bg-teal-700 hover:scale-105 transition transform"
+                className="rounded-2xl bg-teal-600 px-12 py-6 text-2xl font-bold text-white shadow-2xl hover:bg-teal-700 hover:scale-105 hover:shadow-3xl transition-all duration-500"
               >
                 Go to Dashboard
               </button>
-              <button className="rounded-xl border-2 border-slate-300 px-8 py-4 text-lg font-bold text-slate-800 hover:border-teal-600 hover:bg-teal-50 transition">
+              <button className="rounded-2xl border-3 border-slate-300 px-12 py-6 text-2xl font-bold text-slate-800 hover:border-teal-600 hover:bg-teal-50/50 hover:text-teal-700 transition-all duration-300">
                 Learn more
               </button>
             </div>
           </div>
 
-          {/* Feature Preview Card - with subtle hover animation */}
-          <div className="rounded-3xl bg-white shadow-2xl border border-slate-200 p-8 md:p-10 hover:shadow-3xl hover:-translate-y-2 transition-all duration-500">
-            <p className="text-lg font-bold text-slate-800 mb-8">Feature Preview</p>
-            <div className="space-y-8">
-              <div className="flex gap-6 opacity-0 animate-fade-up delay-1">
-                <div className="h-16 w-16 rounded-2xl bg-teal-100 flex items-center justify-center text-4xl flex-shrink-0">
+          {/* Feature Preview Card */}
+          <div className="rounded-3xl bg-white/75 backdrop-blur-xl shadow-2xl border border-white/60 p-12 hover:shadow-3xl hover:-translate-y-4 transition-all duration-700">
+            <p className="text-2xl font-bold text-slate-800 mb-12">Feature Preview</p>
+            <div className="space-y-12">
+              <div className="flex gap-8">
+                <div className="h-20 w-20 rounded-3xl bg-teal-100 flex items-center justify-center text-5xl flex-shrink-0 shadow-lg">
                   📋
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">Teachers Inquests</h3>
-                  <p className="text-slate-700 mt-1">Quickly create, track, and review inquests per teacher and academic year.</p>
+                  <h3 className="text-2xl font-bold text-slate-900">Teachers Inquests</h3>
+                  <p className="text-slate-700 mt-3 text-lg">Quickly create, track, and review inquests per teacher and academic year.</p>
                 </div>
               </div>
-              <div className="flex gap-6 opacity-0 animate-fade-up delay-2">
-                <div className="h-16 w-16 rounded-2xl bg-sky-100 flex items-center justify-center text-4xl flex-shrink-0">
+              <div className="flex gap-8">
+                <div className="h-20 w-20 rounded-3xl bg-sky-100 flex items-center justify-center text-5xl flex-shrink-0 shadow-lg">
                   🧑‍🏫
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">Teacher Dashboard</h3>
-                  <p className="text-slate-700 mt-1">Teachers see alerts, inquests, and daily tasks in one view.</p>
+                  <h3 className="text-2xl font-bold text-slate-900">Teacher Dashboard</h3>
+                  <p className="text-slate-700 mt-3 text-lg">Teachers see alerts, inquests, and daily tasks in one view.</p>
                 </div>
               </div>
-              <div className="flex gap-6 opacity-0 animate-fade-up delay-3">
-                <div className="h-16 w-16 rounded-2xl bg-amber-100 flex items-center justify-center text-4xl flex-shrink-0">
+              <div className="flex gap-8">
+                <div className="h-20 w-20 rounded-3xl bg-emerald-100 flex items-center justify-center text-5xl flex-shrink-0 shadow-lg">
                   🔔
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">Smart Notifications</h3>
-                  <p className="text-slate-700 mt-1">New inquests become notifications for the relevant teacher.</p>
+                  <h3 className="text-2xl font-bold text-slate-900">Smart Notifications</h3>
+                  <p className="text-slate-700 mt-3 text-lg">New inquests become notifications for the relevant teacher.</p>
                 </div>
               </div>
             </div>
@@ -123,33 +146,25 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Simple CSS animations (add to your globals.css or a <style> tag) */}
+      {/* Animations */}
       <style jsx global>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
         }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes float-delay {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
         }
-        .animate-fade-in {
-          animation: fadeIn 1s ease-out forwards;
+        .animate-float {
+          animation: float 14s ease-in-out infinite;
         }
-        .animate-fade-in-delay {
-          animation: fadeIn 1s ease-out 0.3s forwards;
-          opacity: 0;
+        .animate-float-delay {
+          animation: float-delay 18s ease-in-out infinite;
         }
-        .animate-fade-in-delay-2 {
-          animation: fadeIn 1s ease-out 0.6s forwards;
-          opacity: 0;
+        .animate-float-delay-2 {
+          animation: float 16s ease-in-out infinite reverse;
         }
-        .animate-fade-up {
-          animation: fadeUp 0.8s ease-out forwards;
-        }
-        .delay-1 { animation-delay: 0.2s; opacity: 0; }
-        .delay-2 { animation-delay: 0.4s; opacity: 0; }
-        .delay-3 { animation-delay: 0.6s; opacity: 0; }
       `}</style>
     </div>
   );

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { prisma } from "@/lib/prisma"; // ← Adjust path if needed
+import { prisma } from "@/lib/prisma";
 import { ProfileDropdown } from "./ProfileDropdown";
 import { NotificationDropdown } from "./NotificationDropdown";
 
@@ -46,7 +46,7 @@ export async function DashboardNavbar() {
     .toUpperCase();
 
   return (
-    <header className="border-b border-slate-200 bg-white/95 backdrop-blur">
+    <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md shadow-sm">
       <div className="mx-auto max-w-7xl px-4 py-2.5 flex items-center justify-between gap-4">
         {/* Left: Logo + Title */}
         <Link
@@ -66,29 +66,31 @@ export async function DashboardNavbar() {
           </div>
         </Link>
 
-        {/* Middle: Quick links */}
-        <nav className="hidden md:flex items-center gap-4 text-sm">
+        {/* Middle: Quick Navigation Links */}
+        <nav className="hidden md:flex items-center gap-2">
           <Link
             href={
               role === "ADMIN"
                 ? "/dashboard/admin/inquests"
                 : "/dashboard/teacher/inquests"
             }
-            className="px-3 py-1.5 rounded-full text-slate-700 hover:text-teal-700 hover:bg-teal-50 transition"
+            className="px-4 py-2 rounded-full text-sm font-medium text-slate-700 hover:text-teal-700 hover:bg-teal-50 transition"
           >
             Inquests
           </Link>
+
           {role === "ADMIN" && (
             <Link
               href="/dashboard/admin/teachers"
-              className="px-3 py-1.5 rounded-full text-slate-700 hover:text-teal-700 hover:bg-teal-50 transition"
+              className="px-4 py-2 rounded-full text-sm font-medium text-slate-700 hover:text-teal-700 hover:bg-teal-50 transition"
             >
               Teachers
             </Link>
           )}
+
           <Link
             href="/dashboard/notifications"
-            className="px-3 py-1.5 rounded-full text-slate-700 hover:text-teal-700 hover:bg-teal-50 transition"
+            className="px-4 py-2 rounded-full text-sm font-medium text-slate-700 hover:text-teal-700 hover:bg-teal-50 transition"
           >
             Notifications
           </Link>

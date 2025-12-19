@@ -15,7 +15,7 @@ export default async function AdminAnnouncementsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl py-10 px-6">
+    <div className="mx-auto max-w-7xl py-10 px-6">
       <h1 className="text-3xl font-bold text-slate-900 mb-8">
         Create New Announcement
       </h1>

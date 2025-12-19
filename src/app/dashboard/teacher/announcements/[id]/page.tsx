@@ -1,4 +1,3 @@
-// app/dashboard/teacher/announcements/[id]/page.tsx
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect, notFound } from "next/navigation";
@@ -30,17 +29,19 @@ export default async function TeacherAnnouncementDetailPage({ params }: Props) {
   const ann = recipient.announcement;
 
   return (
-    <div className="mx-auto max-w-3xl py-10 px-6">
+    <div className="mx-auto max-w-3xl py-12 px-6 bg-white rounded-2xl shadow-lg border border-gray-200">
       <Link
         href="/dashboard/teacher/announcements"
-        className="text-sm text-teal-600 hover:underline"
+        className="inline-block mb-6 text-sm text-teal-600 hover:underline transition"
       >
         ← Back to announcements
       </Link>
 
-      <h1 className="mt-4 text-3xl font-bold text-slate-900">{ann.title}</h1>
+      <h1 className="mb-2 text-4xl font-extrabold text-gray-900 tracking-tight">
+        {ann.title}
+      </h1>
 
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="text-sm text-gray-500 italic">
         Posted on{" "}
         {new Date(ann.date).toLocaleDateString(undefined, {
           weekday: "long",
@@ -50,7 +51,9 @@ export default async function TeacherAnnouncementDetailPage({ params }: Props) {
         })}
       </p>
 
-      <div className="mt-6 text-slate-700 leading-relaxed whitespace-pre-line">
+      <hr className="my-6 border-gray-300" />
+
+      <div className="text-gray-700 leading-relaxed whitespace-pre-line text-lg">
         {ann.body}
       </div>
 
@@ -59,7 +62,7 @@ export default async function TeacherAnnouncementDetailPage({ params }: Props) {
           href={ann.attachmentUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-6 inline-flex items-center gap-2 text-teal-600 hover:underline font-medium"
+          className="mt-8 inline-flex items-center gap-2 text-teal-600 hover:underline font-semibold text-base transition"
         >
           📎 View attachment
         </a>

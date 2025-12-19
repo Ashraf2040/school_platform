@@ -215,7 +215,7 @@ export default function TeacherDashboard() {
         {/* Lesson form */}
         <form
           onSubmit={handleSubmit}
-          className="mx-auto max-w-3xl rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-100"
+          className="mx-auto max-w-7xl rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-100"
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
