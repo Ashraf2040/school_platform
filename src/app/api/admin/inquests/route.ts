@@ -1,14 +1,12 @@
 // Updated /api/admin/inquests/route.ts
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+
 import { PrismaPg } from "@prisma/adapter-pg";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-const prisma = new PrismaClient({ adapter });
+
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);

@@ -46,15 +46,18 @@ export async function PATCH(
     });
   }
 
-  const updated = await prisma.user.update({
-    where: { id: teacherId },
-    data: updateData,
-    include: {
-      classes: { include: { class: true } },
-      subjects: { include: { subject: true } },
-      teacherProfile: true,
+const updated = await prisma.user.update({
+  where: { id: teacherId },
+  data: updateData,
+  include: {
+    classesTaught: {
+      include: { class: true },
     },
-  });
+    subjectsTaught: {
+      include: { subject: true },
+    },
+  },
+});
 
   return NextResponse.json(updated);
 }

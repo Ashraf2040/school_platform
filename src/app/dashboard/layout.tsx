@@ -35,6 +35,9 @@ export default async function DashboardLayout({
                 <DashboardLink href="/dashboard/admin/announcements">
               Announcement
             </DashboardLink>
+                <DashboardLink href="/dashboard/admin/daily-activities-admin">
+              Daily Lessons Management
+            </DashboardLink>
               </>
             )}
             {role === "TEACHER" && (
@@ -46,11 +49,15 @@ export default async function DashboardLayout({
                  <DashboardLink href="/dashboard/teacher/announcements">
               Announcement
             </DashboardLink>
+<DashboardLink href="/dashboard/admin/daily-activities-teacher">
+              Daily Lessons Management
+            </DashboardLink>
               </>
             )}
             <DashboardLink href="/dashboard/notifications">
               Notifications
             </DashboardLink>
+             
            
             
           </nav>

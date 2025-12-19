@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { uploadFile } from "@/lib/upload";
-import { headers } from "next/headers";
 import { AnnouncementType } from "@prisma/client";
 
 export type AnnouncementFormState = {
@@ -27,17 +26,11 @@ export async function createAnnouncement(
     const body = formData.get("body") as string;
     const date = new Date(formData.get("date") as string);
 
-    // Read ?type=... from the request URL instead of relying on the hidden input
-   const hdrs = await headers();        // ✅ await here
-const referrer = hdrs.get("referer") ?? "";
-
-    const url = new URL(referrer);
-    const queryType = url.searchParams.get("type");
-
+    const typeFromForm = (formData.get("type") as string | null) ?? "general";
     let typeEnum: AnnouncementType = "GENERAL";
-    if (queryType === "targeted") typeEnum = "TARGETED";
+    if (typeFromForm === "targeted") typeEnum = "TARGETED";
 
-    const teacherIdsRaw = formData.getAll("teacherIds");
+    const teacherIdsRaw = formData.getAll("teacherIds"); // group of checkboxes [web:26][web:60]
     const teacherIds = teacherIdsRaw.map((id) => id as string);
 
     let attachmentUrl: string | null = null;

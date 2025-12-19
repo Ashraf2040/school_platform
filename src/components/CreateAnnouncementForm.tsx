@@ -2,16 +2,22 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import {
-  createAnnouncement,
-  type AnnouncementFormState,
-} from "@/app/actions/createAnnouncement";
+import { createAnnouncement } from "@/app/actions/createAnnouncement";
 import { toast } from "react-hot-toast";
 
 type Props = {
   type: "general" | "targeted";
   teachers: { id: string; name: string }[];
-  subjects: { id: string; name: string; teachers: { teacher: { id: string } }[] }[];
+  subjects: {
+    id: string;
+    name: string;
+    teachers: { teacher: { id: string } }[];
+  }[];
+};
+
+type AnnouncementFormState = {
+  message: string;
+  success: boolean;
 };
 
 const initialState: AnnouncementFormState = { message: "", success: false };
@@ -30,17 +36,21 @@ export default function CreateAnnouncementForm({ type, teachers, subjects }: Pro
       toast.error(state.message);
     }
   }, [state]);
-
+console.log(type)
   return (
     <form
       action={formAction}
       className="space-y-6 bg-white p-8 rounded-2xl shadow-lg"
+      encType="multipart/form-data"
     >
+      {/* Pass type to the server action */}
       <input type="hidden" name="type" value={type} />
 
       {/* Title */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Title</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">
+          Title
+        </label>
         <input
           name="title"
           required
@@ -51,7 +61,9 @@ export default function CreateAnnouncementForm({ type, teachers, subjects }: Pro
 
       {/* Body */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Body</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">
+          Body
+        </label>
         <textarea
           name="body"
           required
@@ -63,7 +75,9 @@ export default function CreateAnnouncementForm({ type, teachers, subjects }: Pro
 
       {/* Date */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Date</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">
+          Date
+        </label>
         <input
           name="date"
           type="date"
@@ -92,6 +106,7 @@ export default function CreateAnnouncementForm({ type, teachers, subjects }: Pro
             Select Recipients (by teacher or subject)
           </label>
           <div className="space-y-4 max-h-96 overflow-y-auto p-4 border rounded-lg">
+            {/* by subject (all teachers of a subject) */}
             {subjects.map((subject) => (
               <div key={subject.id} className="flex items-center gap-3">
                 <input
@@ -100,7 +115,10 @@ export default function CreateAnnouncementForm({ type, teachers, subjects }: Pro
                   onChange={(e) => {
                     const ids = subject.teachers.map((t) => t.teacher.id);
                     if (e.target.checked) {
-                      setSelectedTeacherIds((prev) => [...prev, ...ids]);
+                      setSelectedTeacherIds((prev) => [
+                        ...prev,
+                        ...ids.filter((id) => !prev.includes(id)),
+                      ]);
                     } else {
                       setSelectedTeacherIds((prev) =>
                         prev.filter((id) => !ids.includes(id))
@@ -114,6 +132,7 @@ export default function CreateAnnouncementForm({ type, teachers, subjects }: Pro
               </div>
             ))}
 
+            {/* Individual teachers */}
             <div className="border-t pt-4 mt-4">
               <p className="font-medium mb-2">Or select individual teachers:</p>
               {teachers.map((teacher) => (
