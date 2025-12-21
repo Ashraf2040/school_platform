@@ -1,4 +1,4 @@
-// app/admin/inquests/page.tsx or wherever it lives
+// app/admin/inquests/page.tsx
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -10,50 +10,51 @@ import jsPDF from "jspdf";
 
 import { InquestsFilters } from "@/components/admin/inquests/InquestsFilters";
 import { InquestsTable } from "@/components/admin/inquests/InquestsTable";
-import { InquestCreateForm } from "@/components/admin/inquests/InquestCreateForm";
+import { InquestCreateForm, FormState } from "@/components/admin/inquests/InquestCreateForm"; // Import FormState
 import { InquestDecisionForm } from "@/components/admin/inquests/InquestDecisionForm";
 import { InquestDetailsView } from "@/components/admin/inquests/InquestDetailsView";
 import { InquestPDFPreview } from "@/components/admin/inquests/InquestPDFPreview";
 
 import { Teacher, AcademicYear, Inquest } from "@/components/admin/inquests/types";
 
-const PRINCIPAL_OPINION_OPTIONS = [
-  "Excuse accepted",
-  "Alert",
-  "Draw attention",
-  "Deduction for NOT accepting this excuse",
-];
+// Initial form state
+const initialFormState: FormState = {
+  inquestType: "ABSENT",
+  reason: "",
+  details: "",
+  teacherJobTitle: "",
+  teacherSpecialty: "",
+  teacherSchool: "",
+  clarificationRequest: "",
+  absenceDate: undefined, // ← Important: undefined, not ""
+};
 
 export default function AdminInquestsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [years, setYears] = useState<AcademicYear[]>([]);
   
-  // --- Filter States (Modified/New) ---
+  // Filters
   const [filterYearId, setFilterYearId] = useState<string>("");
   const [filterTeacherId, setFilterTeacherId] = useState<string>("");
   const [filterMonth, setFilterMonth] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   
+  const [allInquests, setAllInquests] = useState<Inquest[]>([]);
   const [inquests, setInquests] = useState<Inquest[]>([]);
   const [selectedInquest, setSelectedInquest] = useState<Inquest | null>(null);
+  
   const [showForm, setShowForm] = useState(false);
   const [showDecisionForm, setShowDecisionForm] = useState(false);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
+  
   const [pending, setPending] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
-  const [showPDFPreview, setShowPDFPreview] = useState(false);
 
-  // --- Form States (Kept intact) ---
-  const [form, setForm] = useState({
-    inquestType: "ABSENT" as "ABSENT" | "NEGLIGENCE",
-    reason: "",
-    details: "",
-    teacherJobTitle: "",
-    teacherSpecialty: "",
-    teacherSchool: "",
-    clarificationRequest: "",
-  });
+  // Form state - now properly typed
+  const [form, setForm] = useState<FormState>(initialFormState);
 
   const [decisionForm, setDecisionForm] = useState({
     principalOpinion: "",
@@ -61,7 +62,7 @@ export default function AdminInquestsPage() {
     drawAttentionText: "",
   });
 
-  // --- Auth Check (Kept intact) ---
+  // Auth check
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
@@ -71,7 +72,7 @@ export default function AdminInquestsPage() {
     }
   }, [session, status, router]);
 
-  // --- Initial Data Load (Modified to set filterYearId) ---
+  // Load teachers and academic years
   useEffect(() => {
     const load = async () => {
       try {
@@ -83,8 +84,9 @@ export default function AdminInquestsPage() {
         const yearsData = await yearsRes.json();
         setTeachers(teachersData);
         setYears(yearsData);
+
         const current = yearsData.find((y: AcademicYear) => y.isCurrent);
-        if (current) setFilterYearId(current.id); // Set current year as default filter
+        if (current) setFilterYearId(current.id);
       } catch {
         toast.error("Failed to load initial data");
       }
@@ -92,13 +94,11 @@ export default function AdminInquestsPage() {
     load();
   }, []);
 
-  // --- Load All Inquests (Modified to load all and filter locally) ---
-  const [allInquests, setAllInquests] = useState<Inquest[]>([]);
-  
+  // Load all inquests
   useEffect(() => {
     const loadInquests = async () => {
       try {
-        const res = await fetch(`/api/admin/inquests`);
+        const res = await fetch("/api/admin/inquests");
         if (!res.ok) throw new Error("Failed to fetch inquests");
         const data = await res.json();
         setAllInquests(data);
@@ -109,69 +109,47 @@ export default function AdminInquestsPage() {
     loadInquests();
   }, []);
 
-  // --- Apply Filters Locally ---
+  // Apply filters locally
   useEffect(() => {
     let filtered = [...allInquests];
 
-    // Filter by year
     if (filterYearId) {
       filtered = filtered.filter((i) => i.academicYear.id === filterYearId);
     }
-
-    // Filter by teacher
     if (filterTeacherId) {
       filtered = filtered.filter((i) => i.teacher.id === filterTeacherId);
     }
-
-    // Filter by month
     if (filterMonth) {
       filtered = filtered.filter((i) => {
-        const inquestDate = new Date(i.createdAt);
-        const inquestMonth = `${inquestDate.getFullYear()}-${String(inquestDate.getMonth() + 1).padStart(2, '0')}`;
-        return inquestMonth === filterMonth;
+        const date = new Date(i.createdAt);
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        return month === filterMonth;
       });
     }
-
-    // Filter by status
     if (filterStatus) {
       filtered = filtered.filter((i) => i.status === filterStatus);
     }
 
     setInquests(filtered);
-    setSelectedInquest(null);
+    setSelectedInquest(null); // Clear selection when filters change
   }, [allInquests, filterYearId, filterTeacherId, filterMonth, filterStatus]);
 
-  // --- Auto-fill Teacher Info for New Inquest (Modified to use filterTeacherId) ---
+  // Pre-fill decision form when inquest is responded
   useEffect(() => {
-    if (filterTeacherId) {
-      const teacher = teachers.find((t) => t.id === filterTeacherId);
-      if (teacher?.teacherProfile) {
-        setForm((prev) => ({
-          ...prev,
-          teacherJobTitle: teacher.teacherProfile?.jobTitle || "",
-          teacherSpecialty: teacher.teacherProfile?.specialty || "",
-          teacherSchool: teacher.teacherProfile?.schoolName || "",
-        }));
-      }
+    if (selectedInquest && selectedInquest.status === "RESPONDED") {
+      setDecisionForm({
+        principalOpinion: selectedInquest.principalOpinion || "",
+        decisionText: selectedInquest.decisionText || "",
+        drawAttentionText: selectedInquest.drawAttentionText || "",
+      });
     }
-  }, [filterTeacherId, teachers]);
-console.log(form)
-  // --- Decision Form Pre-fill (Kept intact) ---
-  useEffect(() => {
-  if (selectedInquest && selectedInquest.status === "RESPONDED") {
-    setDecisionForm({
-      principalOpinion: selectedInquest.principalOpinion || "",
-      decisionText: selectedInquest.decisionText || "",
-      drawAttentionText: selectedInquest.drawAttentionText || "", // add this
-    });
-  }
-}, [selectedInquest]);
+  }, [selectedInquest]);
 
-  // --- Handle Create Submit (Modified to use filterYearId and filterTeacherId) ---
+  // Handle Create Inquest
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!filterTeacherId || !filterYearId) {
-      toast.error("Select academic year and teacher first");
+      toast.error("Please select academic year and teacher");
       return;
     }
 
@@ -186,170 +164,133 @@ console.log(form)
           ...form,
         }),
       });
+
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
+        const data = await res.json().catch(() => ({}));
         throw new Error(data?.error || "Failed to create inquest");
       }
-      toast.success("Inquest created and notification sent");
-      setForm({
-        inquestType: "ABSENT",
-        reason: "",
-        details: "",
-        teacherJobTitle: "",
-        teacherSpecialty: "",
-        teacherSchool: "",
-        clarificationRequest: "",
-      });
+
+      toast.success("Inquest created and notification sent!");
+
+      // Reset form
+      setForm(initialFormState);
+
+      // Close form
       setShowForm(false);
 
-      // Re-fetch all inquests to update the list
-      const updated = await fetch(`/api/admin/inquests`).then((r) => r.json());
+      // Refresh inquest list
+      const updated = await fetch("/api/admin/inquests").then((r) => r.json());
       setAllInquests(updated);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create inquest");
     } finally {
       setPending(false);
     }
   };
 
-  // --- Handle Decision Submit (Modified to use the new filter logic for re-fetch) ---
-const handleDecisionSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!selectedInquest) return;
+  // Handle Decision Submit
+  const handleDecisionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedInquest) return;
 
-  setPending(true);
-  try {
-    const payload: any = {
-      principalOpinion: decisionForm.principalOpinion,
-      decisionText: decisionForm.decisionText,
-      status: "COMPLETED",
-    };
+    setPending(true);
+    try {
+      const payload: any = {
+        principalOpinion: decisionForm.principalOpinion,
+        decisionText: decisionForm.decisionText,
+        status: "COMPLETED",
+      };
 
-    // 1. تحديث التحقيق (Inquest)
-    // Only add drawAttentionText if "Draw attention" is selected
-    if (decisionForm.principalOpinion?.includes("Draw attention")) {
-      payload.drawAttentionText = decisionForm.drawAttentionText;
-    }
+      if (decisionForm.principalOpinion?.includes("Draw attention")) {
+        payload.drawAttentionText = decisionForm.drawAttentionText;
+      }
 
-    const res = await fetch(`/api/inquests/${selectedInquest.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to update inquest");
-    }
-
-    // 2. إذا تم اختيار "Draw attention" → إنشاء إعلان مستهدف عبر API Route
-    if (decisionForm.principalOpinion?.includes("Draw attention") && decisionForm.drawAttentionText) {
-      // 🔴 التأكد من إرسال البيانات الصحيحة إلى API Route
-      const announcementRes = await fetch("/api/announcements", {
-        method: "POST",
+      const res = await fetch(`/api/inquests/${selectedInquest.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "لفت نظر - Draw Attention", // العنوان المطلوب
-          body: decisionForm.drawAttentionText, // نص لفت النظر
-          type: "DRAW_ATTENTION", // النوع لتمييزه
-          teacherIds: [selectedInquest.teacher.id], // المعلم المستهدف
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (!announcementRes.ok) {
-        console.warn("Failed to send draw attention announcement");
-        // لا نوقف العملية في حال فشل الإشعار
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update inquest");
       }
+
+      // Send draw attention announcement if needed
+      if (decisionForm.principalOpinion?.includes("Draw attention") && decisionForm.drawAttentionText) {
+        await fetch("/api/announcements", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "لفت نظر - Draw Attention",
+            body: decisionForm.drawAttentionText,
+            type: "DRAW_ATTENTION",
+            teacherIds: [selectedInquest.teacher.id],
+          }),
+        });
+      }
+
+      toast.success("Decision saved and inquest completed");
+      setShowDecisionForm(false);
+
+      // Refresh data
+      const updated = await fetch("/api/admin/inquests").then((r) => r.json());
+      setAllInquests(updated);
+      const updatedInquest = updated.find((i: Inquest) => i.id === selectedInquest.id);
+      setSelectedInquest(updatedInquest || null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save decision");
+    } finally {
+      setPending(false);
     }
-
-    toast.success("Decision saved and inquest completed");
-    setShowDecisionForm(false);
-
-    // Refresh list
-    const updated = await fetch(`/api/admin/inquests`).then((r) => r.json());
-    setAllInquests(updated);
-    const updatedInquest = updated.find((i: Inquest) => i.id === selectedInquest.id);
-    setSelectedInquest(updatedInquest);
-  } catch (e: any) {
-    toast.error(e.message || "Failed to save decision");
-  } finally {
-    setPending(false);
-  }
-}
-
-  // --- PDF Generation (Kept intact) ---
-  const handlePreview = () => {
-    setShowPDFPreview(true);
   };
+
+  const handlePreview = () => setShowPDFPreview(true);
 
   const generatePDF = async () => {
     if (!selectedInquest || generatingPDF) return;
-
     setGeneratingPDF(true);
-    const loadingId = toast.loading("Generating PDF... Please wait");
+    const loadingId = toast.loading("Generating PDF...");
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((r) => setTimeout(r, 300));
+      const el = document.getElementById("pdf-preview-template");
+      if (!el) throw new Error("Preview template not found");
 
-      const previewElement = document.getElementById("pdf-preview-template");
-      if (!previewElement) throw new Error("Preview element not found");
-
-      const canvas = await html2canvas(previewElement, {
-  scale: 2,
-  useCORS: true,
-  allowTaint: true,          // ← important for fonts
-  backgroundColor: "#ffffff",
-  logging: true,
-  windowWidth: previewElement.scrollWidth + 200,
-  windowHeight: previewElement.scrollHeight + 200,
-});
-
-      console.log("Canvas size:", canvas.width, "x", canvas.height);
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      const width = pdf.internal.pageSize.getWidth();
+      const height = (canvas.height * width) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-
-      pdf.save(
-        `Inquest_${selectedInquest.teacher.name.replace(/\s+/g, "_")}_${new Date(
-          selectedInquest.createdAt
-        ).toLocaleDateString("en-GB")}.pdf`
-      );
+      pdf.addImage(imgData, "PNG", 0, 0, width, height);
+      pdf.save(`Inquest_${selectedInquest.teacher.name.replace(/\s+/g, "_")}_${new Date(selectedInquest.createdAt).toLocaleDateString("en-GB")}.pdf`);
 
       toast.dismiss(loadingId);
-      toast.success("PDF downloaded successfully!");
+      toast.success("PDF downloaded!");
     } catch (err) {
-      console.error("PDF generation error:", err);
+      console.error(err);
       toast.dismiss(loadingId);
-      toast.error("Failed to generate PDF. Check console.");
+      toast.error("Failed to generate PDF");
     } finally {
       setGeneratingPDF(false);
     }
   };
 
-  // --- Helper for Month/Year filter options ---
   const getMonthOptions = useMemo(() => {
     const months = [];
     const now = new Date();
     for (let i = 0; i < 12; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const label = date.toLocaleString('en-US', { year: 'numeric', month: 'long' });
+      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const label = date.toLocaleString("en-US", { year: "numeric", month: "long" });
       months.push({ value, label });
     }
     return months;
@@ -444,7 +385,7 @@ const handleDecisionSubmit = async (e: React.FormEvent) => {
             ) : (
               <div className="p-12 text-center">
                 <div className="text-5xl mb-4 opacity-20">📋</div>
-                <p className="text-slate-600">Select an inquest from the table above to view details.</p>
+                <p className="text-slate-600">Select an inquest from the table to view details.</p>
               </div>
             )}
           </div>

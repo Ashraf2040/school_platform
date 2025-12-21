@@ -22,9 +22,9 @@ export default function HomePage() {
       {/* Background Gradients + Subtle Dot Grid */}
       <div className="absolute inset-0 -z-10">
         {/* Main gradient layers */}
-        <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-teal-50 to-emerald-50" />
-        <div className="absolute inset-0 bg-gradient-to-tl from-teal-200/30 via-transparent to-sky-200/30" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-100/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-br from-sky-50 via-teal-50 to-emerald-50" />
+        <div className="absolute inset-0 bg-linear-to-tl from-teal-200/30 via-transparent to-sky-200/30" />
+        <div className="absolute inset-0 bg-linear-to-tr from-emerald-100/20 via-transparent to-transparent" />
 
         {/* Subtle dot grid */}
         <svg className="absolute inset-0 w-full h-full">
@@ -88,10 +88,10 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <main className="flex-1 py-16 px-6 md:py-24 lg:py-32 relative z-10">
-        <div className="mx-auto w-full max-w-7xl grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <main className="flex-1 py-16  px-16 md:py-24 lg:py-32 relative z-10">
+        <div className="mx-auto  grid lg:grid-cols-2 md:w-4/5 gap-10 lg:gap-20 items-center">
           <div className="text-center lg:text-left">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight drop-shadow-lg">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight drop-shadow-lg">
               One platform for all your school management needs.
             </h1>
             <p className="mt-8 md:mt-12 text-lg sm:text-xl lg:text-2xl text-slate-700 leading-relaxed max-w-3xl mx-auto lg:mx-0 opacity-95">
