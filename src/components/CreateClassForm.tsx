@@ -1,5 +1,6 @@
 // app/admin/components/CreateClassForm.tsx
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -19,6 +20,8 @@ export default function CreateClassForm({
   onSuccess,
   pending,
 }: Props) {
+  const t = useTranslations('CreateClassForm');
+
   const [name, setName] = useState('');
 
   if (!show) return null;
@@ -38,26 +41,37 @@ export default function CreateClassForm({
         })()
       ),
       {
-        loading: 'Creating class…',
-        success: 'Class created',
-        error: (e) => `Failed: ${e.message}`,
+        loading: t('toast.creating'),
+        success: t('toast.success'),
+        error: (e) => `${t('toast.error')} ${e.message}`,
       }
     );
   };
 
   return (
     <div className="mx-auto mb-8 max-w-3xl rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-100">
-      <h2 className="mb-4 text-xl font-semibold text-[#064e4f]">Create Class</h2>
+      <h2 className="mb-4 text-xl font-semibold text-[#064e4f]">
+        {t('title')}
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          placeholder="Class name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="w-full rounded-lg border border-gray-300 px-3 py-2"
-        />
-        <button type="submit" disabled={pending > 0} className="w-full btn-secondary">
-          {pending > 0 ? 'Working…' : 'Create Class'}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-gray-700">
+            {t('labels.name')}
+          </label>
+          <input
+            placeholder={t('placeholders.name')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={pending > 0}
+          className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+        >
+          {pending > 0 ? t('buttons.working') : t('buttons.create')}
         </button>
       </form>
     </div>

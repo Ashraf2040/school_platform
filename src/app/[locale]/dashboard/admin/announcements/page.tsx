@@ -4,10 +4,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 export default async function AdminAnnouncementsPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.role !== "ADMIN") redirect("/login");
+  if (!session?.user || session.user.role !== "ADMIN") {
+    redirect("/login");
+  }
+
+  const t = await getTranslations("AdminAnnouncementsPage");
 
   const announcements = await prisma.announcement.findMany({
     orderBy: { date: "desc" },
@@ -15,9 +20,9 @@ export default async function AdminAnnouncementsPage() {
   });
 
   return (
-    <div className="mx-auto w-4/5 py-10 px-6 ">
+    <div className="mx-auto w-4/5 py-10 px-6">
       <h1 className="text-3xl font-bold text-slate-900 mb-8">
-        Create New Announcement
+        {t("create_new")}
       </h1>
 
       <div className="grid md:grid-cols-2 gap-8">
@@ -29,41 +34,37 @@ export default async function AdminAnnouncementsPage() {
           <div className="text-center">
             <span className="text-6xl mb-4 block">🌐</span>
             <h2 className="text-2xl font-bold text-slate-900">
-              General Announcement
+              {t("general_title")}
             </h2>
-            <p className="mt-3 text-slate-600">
-              Sent to <strong>all teachers</strong> in the school.
-            </p>
+            <p
+              className="mt-3 text-slate-600"
+              dangerouslySetInnerHTML={{ __html: t.raw("general_desc") }}
+            />
           </div>
         </Link>
 
         {/* Targeted Announcement */}
         <Link
-          href={{
-            pathname: "/dashboard/admin/announcements/create",
-            query: { type: "targeted" },
-          }}
+          href="/dashboard/admin/announcements/create?type=targeted"
           className="block p-8 rounded-2xl bg-white shadow-md border-2 border-dashed border-slate-300 hover:border-teal-500 hover:shadow-lg transition"
         >
           <div className="text-center">
             <span className="text-6xl mb-4 block">🎯</span>
             <h2 className="text-2xl font-bold text-slate-900">
-              Targeted Announcement
+              {t("targeted_title")}
             </h2>
-            <p className="mt-3 text-slate-600">
-              Choose specific teachers or subjects.
-            </p>
+            <p className="mt-3 text-slate-600">{t("targeted_desc")}</p>
           </div>
         </Link>
       </div>
 
       <div className="mt-12">
         <h2 className="text-xl font-semibold text-slate-900 mb-4">
-          Recent Announcements
+          {t("recent_title")}
         </h2>
 
         {announcements.length === 0 ? (
-          <p className="text-slate-500">No announcements yet.</p>
+          <p className="text-slate-500">{t("no_announcements")}</p>
         ) : (
           <ul className="space-y-4">
             {announcements.map((a) => (
@@ -79,7 +80,7 @@ export default async function AdminAnnouncementsPage() {
                 </div>
                 <p className="text-sm text-slate-700 line-clamp-2">{a.body}</p>
                 <p className="text-xs text-slate-500">
-                  {a.date.toDateString()}
+                  {new Date(a.date).toLocaleDateString()}
                 </p>
                 {a.attachmentUrl && (
                   <a
@@ -88,7 +89,7 @@ export default async function AdminAnnouncementsPage() {
                     rel="noreferrer"
                     className="text-xs text-teal-600 underline mt-1"
                   >
-                    View attachment
+                    {t("view_attachment")}
                   </a>
                 )}
               </li>

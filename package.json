@@ -23,6 +23,7 @@
     "lucide-react": "^0.562.0",
     "next": "16.0.8",
     "next-auth": "^4.24.13",
+    "next-intl": "^4.6.1",
     "papaparse": "^5.5.3",
     "pg": "^8.16.3",
     "prisma": "^7.1.0",

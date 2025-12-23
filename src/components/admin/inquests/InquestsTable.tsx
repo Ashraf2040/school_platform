@@ -1,4 +1,7 @@
 // components/admin/inquests/InquestsTable.tsx
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Inquest } from "./types";
 
 type Props = {
@@ -16,14 +19,16 @@ export function InquestsTable({
   onAddDecision,
   onPreview,
 }: Props) {
+  const t = useTranslations("InquestsTable");
+
   return (
     <div className="lg:col-span-3 bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
       <div className="p-4 border-b border-slate-200">
         <h2 className="text-lg font-semibold text-slate-900">
-          All Inquests ({inquests.length})
+          {t("title", { count: inquests.length })}
         </h2>
         <p className="text-sm text-slate-500">
-          Click on a row to view details or add a decision.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -31,19 +36,35 @@ export function InquestsTable({
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50 sticky top-0">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Teacher</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Reason</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Action</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t("columns.date")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t("columns.teacher")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t("columns.type")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t("columns.reason")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t("columns.status")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                {t("columns.action")}
+              </th>
             </tr>
           </thead>
+
           <tbody className="bg-white divide-y divide-slate-200">
             {inquests.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-sm text-slate-500">
-                  No inquests found matching the current filters.
+                <td
+                  colSpan={6}
+                  className="px-6 py-4 text-center text-sm text-slate-500"
+                >
+                  {t("empty")}
                 </td>
               </tr>
             ) : (
@@ -58,11 +79,19 @@ export function InquestsTable({
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {new Date(inquest.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{inquest.teacher.name}</td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {inquest.inquestType === "ABSENT" ? "Absence" : "Negligence"}
+                    {inquest.teacher.name}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{inquest.reason}</td>
+
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                    {t(`types.${inquest.inquestType}`)}
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">
+                    {inquest.reason}
+                  </td>
+
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -73,9 +102,10 @@ export function InquestsTable({
                           : "bg-green-100 text-green-800"
                       }`}
                     >
-                      {inquest.status}
+                      {t(`statuses.${inquest.status}`)}
                     </span>
                   </td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {inquest.status === "RESPONDED" && (
                       <button
@@ -85,9 +115,10 @@ export function InquestsTable({
                         }}
                         className="text-teal-600 hover:text-teal-900"
                       >
-                        Add Decision
+                        {t("actions.addDecision")}
                       </button>
                     )}
+
                     {inquest.status === "COMPLETED" && (
                       <button
                         onClick={(e) => {
@@ -96,7 +127,7 @@ export function InquestsTable({
                         }}
                         className="text-indigo-600 hover:text-indigo-900"
                       >
-                        Preview
+                        {t("actions.preview")}
                       </button>
                     )}
                   </td>

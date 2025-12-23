@@ -4,13 +4,14 @@
 import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "react-hot-toast";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 
 import { InquestsFilters } from "@/components/admin/inquests/InquestsFilters";
 import { InquestsTable } from "@/components/admin/inquests/InquestsTable";
-import { InquestCreateForm, FormState } from "@/components/admin/inquests/InquestCreateForm"; // Import FormState
+import { InquestCreateForm, FormState } from "@/components/admin/inquests/InquestCreateForm";
 import { InquestDecisionForm } from "@/components/admin/inquests/InquestDecisionForm";
 import { InquestDetailsView } from "@/components/admin/inquests/InquestDetailsView";
 import { InquestPDFPreview } from "@/components/admin/inquests/InquestPDFPreview";
@@ -26,34 +27,33 @@ const initialFormState: FormState = {
   teacherSpecialty: "",
   teacherSchool: "",
   clarificationRequest: "",
-  absenceDate: undefined, // ← Important: undefined, not ""
+  absenceDate: undefined,
 };
 
 export default function AdminInquestsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const t = useTranslations("AdminInquests");
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [years, setYears] = useState<AcademicYear[]>([]);
-  
-  // Filters
-  const [filterYearId, setFilterYearId] = useState<string>("");
-  const [filterTeacherId, setFilterTeacherId] = useState<string>("");
-  const [filterMonth, setFilterMonth] = useState<string>("");
-  const [filterStatus, setFilterStatus] = useState<string>("");
-  
+
+  const [filterYearId, setFilterYearId] = useState("");
+  const [filterTeacherId, setFilterTeacherId] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
   const [allInquests, setAllInquests] = useState<Inquest[]>([]);
   const [inquests, setInquests] = useState<Inquest[]>([]);
   const [selectedInquest, setSelectedInquest] = useState<Inquest | null>(null);
-  
+
   const [showForm, setShowForm] = useState(false);
   const [showDecisionForm, setShowDecisionForm] = useState(false);
   const [showPDFPreview, setShowPDFPreview] = useState(false);
-  
+
   const [pending, setPending] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
 
-  // Form state - now properly typed
   const [form, setForm] = useState<FormState>(initialFormState);
 
   const [decisionForm, setDecisionForm] = useState({
@@ -61,135 +61,7 @@ export default function AdminInquestsPage() {
     decisionText: "",
     drawAttentionText: "",
   });
-
-  // Auth check
-  useEffect(() => {
-    if (status === "loading") return;
-    if (!session?.user) {
-      router.push("/login");
-    } else if (session.user.role !== "ADMIN") {
-      router.push("/dashboard");
-    }
-  }, [session, status, router]);
-
-  // Load teachers and academic years
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [teachersRes, yearsRes] = await Promise.all([
-          fetch("/api/admin/teachers"),
-          fetch("/api/academic-years"),
-        ]);
-        const teachersData = await teachersRes.json();
-        const yearsData = await yearsRes.json();
-        setTeachers(teachersData);
-        setYears(yearsData);
-
-        const current = yearsData.find((y: AcademicYear) => y.isCurrent);
-        if (current) setFilterYearId(current.id);
-      } catch {
-        toast.error("Failed to load initial data");
-      }
-    };
-    load();
-  }, []);
-
-  // Load all inquests
-  useEffect(() => {
-    const loadInquests = async () => {
-      try {
-        const res = await fetch("/api/admin/inquests");
-        if (!res.ok) throw new Error("Failed to fetch inquests");
-        const data = await res.json();
-        setAllInquests(data);
-      } catch (e: any) {
-        toast.error(e.message || "Failed to load inquests");
-      }
-    };
-    loadInquests();
-  }, []);
-
-  // Apply filters locally
-  useEffect(() => {
-    let filtered = [...allInquests];
-
-    if (filterYearId) {
-      filtered = filtered.filter((i) => i.academicYear.id === filterYearId);
-    }
-    if (filterTeacherId) {
-      filtered = filtered.filter((i) => i.teacher.id === filterTeacherId);
-    }
-    if (filterMonth) {
-      filtered = filtered.filter((i) => {
-        const date = new Date(i.createdAt);
-        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        return month === filterMonth;
-      });
-    }
-    if (filterStatus) {
-      filtered = filtered.filter((i) => i.status === filterStatus);
-    }
-
-    setInquests(filtered);
-    setSelectedInquest(null); // Clear selection when filters change
-  }, [allInquests, filterYearId, filterTeacherId, filterMonth, filterStatus]);
-
-  // Pre-fill decision form when inquest is responded
-  useEffect(() => {
-    if (selectedInquest && selectedInquest.status === "RESPONDED") {
-      setDecisionForm({
-        principalOpinion: selectedInquest.principalOpinion || "",
-        decisionText: selectedInquest.decisionText || "",
-        drawAttentionText: selectedInquest.drawAttentionText || "",
-      });
-    }
-  }, [selectedInquest]);
-
-  // Handle Create Inquest
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!filterTeacherId || !filterYearId) {
-      toast.error("Please select academic year and teacher");
-      return;
-    }
-
-    setPending(true);
-    try {
-      const res = await fetch("/api/admin/inquests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teacherId: filterTeacherId,
-          academicYearId: filterYearId,
-          ...form,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Failed to create inquest");
-      }
-
-      toast.success("Inquest created and notification sent!");
-
-      // Reset form
-      setForm(initialFormState);
-
-      // Close form
-      setShowForm(false);
-
-      // Refresh inquest list
-      const updated = await fetch("/api/admin/inquests").then((r) => r.json());
-      setAllInquests(updated);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create inquest");
-    } finally {
-      setPending(false);
-    }
-  };
-
-  // Handle Decision Submit
-  const handleDecisionSubmit = async (e: React.FormEvent) => {
+ const handleDecisionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedInquest) return;
 
@@ -244,41 +116,130 @@ export default function AdminInquestsPage() {
       setPending(false);
     }
   };
+  /* ---------------- Auth ---------------- */
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session?.user) router.push("/login");
+    else if (session.user.role !== "ADMIN") router.push("/dashboard");
+  }, [session, status, router]);
 
-  const handlePreview = () => setShowPDFPreview(true);
+  /* ---------------- Load data ---------------- */
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [teachersRes, yearsRes] = await Promise.all([
+          fetch("/api/admin/teachers"),
+          fetch("/api/academic-years"),
+        ]);
+        const teachersData = await teachersRes.json();
+        const yearsData = await yearsRes.json();
 
+        setTeachers(teachersData);
+        setYears(yearsData);
+
+        const current = yearsData.find((y: AcademicYear) => y.isCurrent);
+        if (current) setFilterYearId(current.id);
+      } catch {
+        toast.error(t("errors.loadInitial"));
+      }
+    };
+    load();
+  }, [t]);
+
+  useEffect(() => {
+    const loadInquests = async () => {
+      try {
+        const res = await fetch("/api/admin/inquests");
+        if (!res.ok) throw new Error();
+        setAllInquests(await res.json());
+      } catch {
+        toast.error(t("errors.loadInquests"));
+      }
+    };
+    loadInquests();
+  }, [t]);
+
+  /* ---------------- Filters ---------------- */
+  useEffect(() => {
+    let filtered = [...allInquests];
+
+    if (filterYearId)
+      filtered = filtered.filter((i) => i.academicYear.id === filterYearId);
+    if (filterTeacherId)
+      filtered = filtered.filter((i) => i.teacher.id === filterTeacherId);
+    if (filterMonth)
+      filtered = filtered.filter((i) => {
+        const d = new Date(i.createdAt);
+        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return m === filterMonth;
+      });
+    if (filterStatus)
+      filtered = filtered.filter((i) => i.status === filterStatus);
+
+    setInquests(filtered);
+    setSelectedInquest(null);
+  }, [allInquests, filterYearId, filterTeacherId, filterMonth, filterStatus]);
+const handlePreview = () => setShowPDFPreview(true);
+  /* ---------------- Create Inquest ---------------- */
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!filterTeacherId || !filterYearId) {
+      toast.error(t("errors.selectYearTeacher"));
+      return;
+    }
+
+    setPending(true);
+    try {
+      const res = await fetch("/api/admin/inquests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teacherId: filterTeacherId,
+          academicYearId: filterYearId,
+          ...form,
+        }),
+      });
+
+      if (!res.ok) throw new Error();
+
+      toast.success(t("success.created"));
+      setForm(initialFormState);
+      setShowForm(false);
+
+      setAllInquests(await fetch("/api/admin/inquests").then((r) => r.json()));
+    } catch {
+      toast.error(t("errors.create"));
+    } finally {
+      setPending(false);
+    }
+  };
+
+  /* ---------------- PDF ---------------- */
   const generatePDF = async () => {
     if (!selectedInquest || generatingPDF) return;
     setGeneratingPDF(true);
-    const loadingId = toast.loading("Generating PDF...");
+
+    const loadingId = toast.loading(t("pdf.generating"));
 
     try {
-      await new Promise((r) => setTimeout(r, 300));
       const el = document.getElementById("pdf-preview-template");
-      if (!el) throw new Error("Preview template not found");
+      if (!el) throw new Error();
 
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-      });
+      const canvas = await html2canvas(el, { scale: 2 });
+      const img = canvas.toDataURL("image/png");
 
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
-      const width = pdf.internal.pageSize.getWidth();
-      const height = (canvas.height * width) / canvas.width;
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, width, height);
-      pdf.save(`Inquest_${selectedInquest.teacher.name.replace(/\s+/g, "_")}_${new Date(selectedInquest.createdAt).toLocaleDateString("en-GB")}.pdf`);
+      pdf.addImage(img, "PNG", 0, 0, w, h);
+      pdf.save(`Inquest_${selectedInquest.teacher.name}.pdf`);
 
       toast.dismiss(loadingId);
-      toast.success("PDF downloaded!");
-    } catch (err) {
-      console.error(err);
-      toast.dismiss(loadingId);
-      toast.error("Failed to generate PDF");
+      toast.success(t("pdf.downloaded"));
+    } catch {
+      toast.error(t("pdf.failed"));
     } finally {
       setGeneratingPDF(false);
     }
@@ -288,21 +249,20 @@ export default function AdminInquestsPage() {
     const months = [];
     const now = new Date();
     for (let i = 0; i < 12; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const label = date.toLocaleString("en-US", { year: "numeric", month: "long" });
-      months.push({ value, label });
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+        label: d.toLocaleString("en-US", { month: "long", year: "numeric" }),
+      });
     }
     return months;
   }, []);
 
   return (
-    <div className="mx-auto w-full py-8 px-6 space-y-8 font-['Noto_Sans_Arabic',sans-serif]">
+    <div className="mx-auto w-full py-8 px-6 space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-slate-900">Teachers Inquests</h1>
-        <p className="mt-2 text-base text-slate-600">
-          Create, review, and manage teacher inquests efficiently.
-        </p>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
+        <p className="mt-2 text-slate-600">{t("subtitle")}</p>
       </div>
 
       <InquestsFilters
@@ -317,12 +277,7 @@ export default function AdminInquestsPage() {
         onFilterTeacherChange={setFilterTeacherId}
         onFilterMonthChange={setFilterMonth}
         onFilterStatusChange={setFilterStatus}
-        onCreateNew={() => {
-          setShowForm(true);
-          setSelectedInquest(null);
-          setShowDecisionForm(false);
-          setShowPDFPreview(false);
-        }}
+        onCreateNew={() => setShowForm(true)}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

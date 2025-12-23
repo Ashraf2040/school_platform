@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { SignOutButton } from "@/components/SignOutButton";
 
 type ProfileDropdownProps = {
@@ -19,6 +20,7 @@ export function ProfileDropdown({
   initials,
 }: ProfileDropdownProps) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("ProfileDropdown");
 
   return (
     <div className="relative">
@@ -30,7 +32,7 @@ export function ProfileDropdown({
         <div className="hidden sm:block">
           <p className="text-xs font-semibold text-slate-900">{name}</p>
           <p className="text-[11px] text-slate-500">
-            {role === "ADMIN" ? "Administrator" : "Teacher"}
+            {role === "ADMIN" ? t("roles.admin") : t("roles.teacher")}
           </p>
         </div>
         <div className="h-8 w-8 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-[11px] font-bold text-white shadow">
@@ -54,14 +56,15 @@ export function ProfileDropdown({
             className="block px-3 py-2 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700"
             onClick={() => setOpen(false)}
           >
-            View / Edit profile
+            {t("viewProfile")}
           </Link>
+
           <Link
             href="/dashboard/settings"
             className="block px-3 py-2 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700"
             onClick={() => setOpen(false)}
           >
-            Account settings
+            {t("settings")}
           </Link>
 
           <div className="border-t border-slate-100 mt-1 pt-1 px-3 pb-1.5">

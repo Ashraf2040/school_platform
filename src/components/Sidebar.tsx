@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 // Simple inline SVG icons (no external dependency)
 const icons = {
@@ -40,45 +41,39 @@ const icons = {
 
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
+  const t = useTranslations("Sidebar");
 
-  const isActive = (href: string) => {
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <aside className="w-64 border-r border-slate-200 bg-white shadow-sm">
       <div className="flex h-full flex-col">
-        {/* Sidebar Header */}
-        {/* <div className="border-b border-slate-200 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-teal-600 text-white flex items-center justify-center text-xl font-bold">
-              SM
-            </div>
-            <div>
-              <p className="font-semibold text-slate-800">School Manager</p>
-              <p className="text-xs text-slate-500">Al Forqan School</p>
-            </div>
-          </div>
-        </div> */}
-
-        {/* Navigation */}
         <nav className="flex-1 px-4 space-y-1">
           {role === "ADMIN" && (
             <>
               <SidebarLink href="/dashboard/admin" icon={icons.overview} active={isActive("/dashboard/admin")}>
-                Overview
+                {t("overview")}
               </SidebarLink>
+
               <SidebarLink href="/dashboard/admin/inquests" icon={icons.inquests} active={isActive("/dashboard/admin/inquests")}>
-                Teachers Inquests
+                {t("teachersInquests")}
               </SidebarLink>
+
               <SidebarLink href="/dashboard/admin/teachers" icon={icons.teachers} active={isActive("/dashboard/admin/teachers")}>
-                Teachers
+                {t("teachers")}
               </SidebarLink>
+
               <SidebarLink href="/dashboard/admin/announcements" icon={icons.announcements} active={isActive("/dashboard/admin/announcements")}>
-                Announcements
+                {t("announcements")}
               </SidebarLink>
-              <SidebarLink href="/dashboard/admin/daily-activities-admin" icon={icons.lessons} active={isActive("/dashboard/admin/daily-activities-admin")}>
-                Daily Lessons Management
+
+              <SidebarLink
+                href="/dashboard/admin/daily-activities-admin"
+                icon={icons.lessons}
+                active={isActive("/dashboard/admin/daily-activities-admin")}
+              >
+                {t("dailyLessonsManagement")}
               </SidebarLink>
             </>
           )}
@@ -86,25 +81,31 @@ export default function Sidebar({ role }: { role: string }) {
           {role === "TEACHER" && (
             <>
               <SidebarLink href="/dashboard/teacher" icon={icons.overview} active={isActive("/dashboard/teacher")}>
-                Overview
+                {t("overview")}
               </SidebarLink>
+
               <SidebarLink href="/dashboard/teacher/inquests" icon={icons.inquests} active={isActive("/dashboard/teacher/inquests")}>
-                My Inquests
+                {t("myInquests")}
               </SidebarLink>
+
               <SidebarLink href="/dashboard/teacher/announcements" icon={icons.announcements} active={isActive("/dashboard/teacher/announcements")}>
-                Announcements
+                {t("announcements")}
               </SidebarLink>
-              <SidebarLink href="/dashboard/admin/daily-activities-teacher" icon={icons.lessons} active={isActive("/dashboard/admin/daily-activities-teacher")}>
-                Daily Lessons Management
+
+              <SidebarLink
+                href="/dashboard/admin/daily-activities-teacher"
+                icon={icons.lessons}
+                active={isActive("/dashboard/admin/daily-activities-teacher")}
+              >
+                {t("dailyLessonsManagement")}
               </SidebarLink>
             </>
           )}
 
-          {/* Common section */}
           <div className="pt-6">
             <div className="h-px bg-slate-200 mb-3" />
             <SidebarLink href="/dashboard/notifications" icon={icons.notifications} active={isActive("/dashboard/notifications")}>
-              Notifications
+              {t("notifications")}
             </SidebarLink>
           </div>
         </nav>

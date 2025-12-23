@@ -1,5 +1,8 @@
-// components/admin/inquests/InquestCreateForm.tsx
+
+"use client";
+
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { AcademicYear, Teacher } from "./types";
 
 export type FormState = {
@@ -10,12 +13,12 @@ export type FormState = {
   teacherSpecialty: string;
   teacherSchool: string;
   clarificationRequest: string;
-  absenceDate?: string; // Optional: YYYY-MM-DD
+  absenceDate?: string;
 };
 
 type Props = {
   form: FormState;
-  setForm: React.Dispatch<React.SetStateAction<FormState>>; // ← FIXED HERE
+  setForm: React.Dispatch<React.SetStateAction<FormState>>;
   filterYearId: string;
   setFilterYearId: (id: string) => void;
   filterTeacherId: string;
@@ -40,7 +43,9 @@ export function InquestCreateForm({
   onSubmit,
   onCancel,
 }: Props) {
-  // Auto-fill teacher profile fields when teacher changes
+  const t = useTranslations("InquestCreateForm");
+
+  /* ---------------- Auto-fill teacher profile ---------------- */
   useEffect(() => {
     if (filterTeacherId) {
       const teacher = teachers.find((t) => t.id === filterTeacherId);
@@ -55,7 +60,7 @@ export function InquestCreateForm({
     }
   }, [filterTeacherId, teachers, setForm]);
 
-  // Auto-fill Reason when absenceDate changes and type is ABSENT
+  /* ---------------- Auto-fill reason for absence ---------------- */
   useEffect(() => {
     if (form.inquestType === "ABSENT" && form.absenceDate) {
       const date = new Date(form.absenceDate);
@@ -64,23 +69,27 @@ export function InquestCreateForm({
         month: "long",
         year: "numeric",
       });
+
       setForm((prev) => ({
         ...prev,
-        reason: `Clarify the reason of absence on **${formatted}**`,
+        reason: t("autoReason", { date: formatted }),
       }));
     }
-  }, [form.inquestType, form.absenceDate, setForm]);
+  }, [form.inquestType, form.absenceDate, setForm, t]);
 
   return (
     <div className="p-6 space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-slate-900">Create New Inquest</h2>
+        <h2 className="text-xl font-semibold text-slate-900">
+          {t("title")}
+        </h2>
         <button
           type="button"
           onClick={onCancel}
           className="text-sm text-slate-600 hover:text-slate-900"
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
 
@@ -89,7 +98,7 @@ export function InquestCreateForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Academic Year <span className="text-red-500">*</span>
+              {t("academicYear")} <span className="text-red-500">*</span>
             </label>
             <select
               value={filterYearId}
@@ -97,10 +106,10 @@ export function InquestCreateForm({
               required
               className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
             >
-              <option value="">Select Year...</option>
+              <option value="">{t("selectYear")}</option>
               {years.map((y) => (
                 <option key={y.id} value={y.id}>
-                  {y.name} {y.isCurrent ? "(Current)" : ""}
+                  {y.name} {y.isCurrent ? `(${t("current")})` : ""}
                 </option>
               ))}
             </select>
@@ -108,7 +117,7 @@ export function InquestCreateForm({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Teacher <span className="text-red-500">*</span>
+              {t("teacher")} <span className="text-red-500">*</span>
             </label>
             <select
               value={filterTeacherId}
@@ -116,10 +125,10 @@ export function InquestCreateForm({
               required
               className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
             >
-              <option value="">Select Teacher...</option>
-              {teachers.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.username})
+              <option value="">{t("selectTeacher")}</option>
+              {teachers.map((tch) => (
+                <option key={tch.id} value={tch.id}>
+                  {tch.name} ({tch.username})
                 </option>
               ))}
             </select>
@@ -129,25 +138,28 @@ export function InquestCreateForm({
         {/* Inquest Type */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Inquest Type <span className="text-red-500">*</span>
+            {t("type")} <span className="text-red-500">*</span>
           </label>
           <select
             value={form.inquestType}
             onChange={(e) =>
-              setForm({ ...form, inquestType: e.target.value as "ABSENT" | "NEGLIGENCE" })
+              setForm({
+                ...form,
+                inquestType: e.target.value as "ABSENT" | "NEGLIGENCE",
+              })
             }
             className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
           >
-            <option value="ABSENT">Absence</option>
-            <option value="NEGLIGENCE">Negligence</option>
+            <option value="ABSENT">{t("types.ABSENT")}</option>
+            <option value="NEGLIGENCE">{t("types.NEGLIGENCE")}</option>
           </select>
         </div>
 
-        {/* Conditional Absence Date */}
+        {/* Absence Date */}
         {form.inquestType === "ABSENT" && (
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Date of Absence <span className="text-red-500">*</span>
+              {t("absenceDate")} <span className="text-red-500">*</span>
             </label>
             <input
               type="date"
@@ -161,10 +173,10 @@ export function InquestCreateForm({
           </div>
         )}
 
-        {/* Reason - auto-filled & read-only for Absence */}
+        {/* Reason */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Reason <span className="text-red-500">*</span>
+            {t("reason")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -172,57 +184,77 @@ export function InquestCreateForm({
             onChange={(e) => setForm({ ...form, reason: e.target.value })}
             required
             readOnly={form.inquestType === "ABSENT" && !!form.absenceDate}
-            className={`w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition ${
-              form.inquestType === "ABSENT" && !!form.absenceDate ? "bg-slate-50 cursor-not-allowed" : ""
+            className={`w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm transition ${
+              form.inquestType === "ABSENT" && !!form.absenceDate
+                ? "bg-slate-50 cursor-not-allowed"
+                : ""
             }`}
           />
           {form.inquestType === "ABSENT" && !!form.absenceDate && (
             <p className="mt-1 text-xs text-slate-500">
-              Auto-filled based on selected date (editable if needed)
+              {t("autoReasonHint")}
             </p>
           )}
         </div>
 
-        {/* Details (Optional) */}
+        {/* Details */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Details (Optional)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            {t("details")}
+          </label>
           <textarea
             value={form.details}
             onChange={(e) => setForm({ ...form, details: e.target.value })}
             rows={4}
-            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition resize-none"
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm resize-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
           />
         </div>
 
-        {/* Teacher Info - Auto-filled, editable */}
+        {/* Teacher Info */}
         <div>
-          <p className="text-sm font-medium text-slate-700 mb-3">Teacher Information (auto-filled)</p>
+          <p className="text-sm font-medium text-slate-700 mb-3">
+            {t("teacherInfo")}
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Job Title</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                {t("jobTitle")}
+              </label>
               <input
                 type="text"
                 value={form.teacherJobTitle}
-                onChange={(e) => setForm({ ...form, teacherJobTitle: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
+                onChange={(e) =>
+                  setForm({ ...form, teacherJobTitle: e.target.value })
+                }
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Specialty</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                {t("specialty")}
+              </label>
               <input
                 type="text"
                 value={form.teacherSpecialty}
-                onChange={(e) => setForm({ ...form, teacherSpecialty: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
+                onChange={(e) =>
+                  setForm({ ...form, teacherSpecialty: e.target.value })
+                }
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">School</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                {t("school")}
+              </label>
               <input
                 type="text"
                 value={form.teacherSchool}
-                onChange={(e) => setForm({ ...form, teacherSchool: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
+                onChange={(e) =>
+                  setForm({ ...form, teacherSchool: e.target.value })
+                }
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
               />
             </div>
           </div>
@@ -235,7 +267,7 @@ export function InquestCreateForm({
             disabled={pending}
             className="rounded-lg bg-teal-600 px-8 py-3 text-sm font-medium text-white shadow hover:bg-teal-700 disabled:opacity-60 transition"
           >
-            {pending ? "Saving..." : "Create Inquest"}
+            {pending ? t("saving") : t("submit")}
           </button>
         </div>
       </form>

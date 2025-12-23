@@ -1,5 +1,6 @@
 // components/admin/inquests/InquestPDFPreview.tsx
 import { Inquest } from "./types";
+import { useState } from "react";
 
 type Props = {
   inquest: Inquest;
@@ -8,25 +9,70 @@ type Props = {
   onDownload: () => void;
 };
 
+type LanguageView = 'Both' | 'Arabic' | 'English';
+
+// Helper function to get the appropriate title based on the selected view
+const getTitle = (english: string, arabic: string, view: LanguageView) => {
+  if (view === 'Arabic') return arabic;
+  if (view === 'English') return english;
+  return `${english} / ${arabic}`;
+};
+
+// Helper function to get the appropriate table header content based on the selected view
+const getTableHeader = (english: string, arabic: string, view: LanguageView) => {
+  if (view === 'Arabic') return arabic;
+  if (view === 'English') return english;
+  return `${arabic}<br/>${english}`;
+};
+
 export function InquestPDFPreview({ inquest, generatingPDF, onClose, onDownload }: Props) {
+  const [languageView, setLanguageView] = useState<LanguageView>('Both');
+
+  const isArabicOnly = languageView === 'Arabic';
+  const isEnglishOnly = languageView === 'English';
+  const isBoth = languageView === 'Both';
+
+  const showEnglish = isBoth || isEnglishOnly;
+  const showArabic = isBoth || isArabicOnly;
+
+  const fullWidthStyle = { width: "100%" };
+  const halfWidthStyle = { width: "50%" };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-slate-900">PDF Preview</h2>
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="rounded-lg bg-gray-600 px-5 py-2 text-sm font-medium text-white shadow hover:bg-gray-700 transition"
-          >
-            Close
-          </button>
-          <button
-            onClick={onDownload}
-            disabled={generatingPDF}
-            className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 disabled:opacity-60 transition"
-          >
-            {generatingPDF ? "Generating..." : "Download"}
-          </button>
+        <div className="flex items-center gap-5">
+          {/* Language Select Box */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="language-select" className="text-sm font-medium text-slate-700">View:</label>
+            <select
+              id="language-select"
+              value={languageView}
+              onChange={(e) => setLanguageView(e.target.value as LanguageView)}
+              className="rounded-lg border border-gray-300 px-3 py-1 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
+              <option value="Both">Both</option>
+              <option value="Arabic">Arabic</option>
+              <option value="English">English</option>
+            </select>
+          </div>
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="rounded-lg bg-gray-600 px-5 py-2 text-sm font-medium text-white shadow hover:bg-gray-700 transition"
+            >
+              Close
+            </button>
+            <button
+              onClick={onDownload}
+              disabled={generatingPDF}
+              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 disabled:opacity-60 transition"
+            >
+              {generatingPDF ? "Generating..." : "Download"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -38,41 +84,41 @@ export function InquestPDFPreview({ inquest, generatingPDF, onClose, onDownload 
           minHeight: "297mm",
           margin: "0 auto",
           fontFamily: "'Amiri', 'Noto Sans Arabic', Arial, sans-serif",
-          fontSize: "12px",
+          fontSize: "14px", // Increased font size
           lineHeight: "1.6",
-          direction: "rtl",
-          color: "#1a1a1a",
+          direction: isArabicOnly ? "rtl" : "ltr", // Conditional direction
+          color: "#1F2937", // Darker text color
         }}
       >
-        {/* Enhanced Header */}
-        <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "20px", borderBottom: "3px solid #0891b2", paddingBottom: "10px", marginBottom: "20px", color: "#0891b2" }}>
+        {/* Enhanced Header - Excluded from language filtering as requested */}
+        <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "22px", borderBottom: "2px solid #1E3A8A", paddingBottom: "15px", marginBottom: "25px", color: "#1E3A8A" }}>
           AL FORQAN PRIVATE SCHOOL- AMERICAN DIVISION
         </div>
-        <div style={{ textAlign: "center", fontSize: "16px", marginBottom: "10px", fontWeight: "600", color: "#0e7490" }}>
+        <div style={{ textAlign: "center", fontSize: "18px", marginBottom: "15px", fontWeight: "600", color: "#374151" }}>
           Academic Year {inquest.academicYear.name}
         </div>
-       <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "28px", marginBottom: "30px", color: "#0891b2" }}>
-    Inquest مسائلة
-  </div>
+       <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "32px", marginBottom: "40px", color: "#1E3A8A" }}>
+          {getTitle("Inquest", "مساءلة", languageView)}
+        </div>
 
-        {/* Teacher Info Table */}
-        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "25px" }}>
+        {/* Teacher Info Table - Headers are conditional */}
+        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "30px", border: "1px solid #D1D5DB" }}>
           <tbody>
             <tr>
-              <td style={{ border: "2px solid #0891b2", padding: "10px", fontWeight: "bold", width: "15%", backgroundColor: "#cffafe", textAlign: "center" }}>الاسم<br/>Name</td>
-              <td style={{ border: "2px solid #0891b2", padding: "10px", width: "35%" }}>{inquest.teacher.name}</td>
-              <td style={{ border: "2px solid #0891b2", padding: "10px", fontWeight: "bold", width: "15%", backgroundColor: "#cffafe", textAlign: "center" }}>الوظيفة<br/>Job</td>
-              <td style={{ border: "2px solid #0891b2", padding: "10px", width: "35%" }}>
+              <td style={{ border: "1px solid #D1D5DB", padding: "12px", fontWeight: "bold", width: "15%", backgroundColor: "#F1F5F9", textAlign: "center", color: "#1E3A8A" }} dangerouslySetInnerHTML={{ __html: getTableHeader("Name", "الاسم", languageView) }}></td>
+              <td style={{ border: "1px solid #D1D5DB", padding: "12px", width: "35%" }}>{inquest.teacher.name}</td>
+              <td style={{ border: "1px solid #D1D5DB", padding: "12px", fontWeight: "bold", width: "15%", backgroundColor: "#F1F5F9", textAlign: "center", color: "#1E3A8A" }} dangerouslySetInnerHTML={{ __html: getTableHeader("Job", "الوظيفة", languageView) }}></td>
+              <td style={{ border: "1px solid #D1D5DB", padding: "12px", width: "35%" }}>
                 {inquest.teacherJobTitle || "غير محدد"}
               </td>
             </tr>
             <tr>
-              <td style={{ border: "2px solid #0891b2", padding: "10px", fontWeight: "bold", backgroundColor: "#cffafe", textAlign: "center" }}>التخصص<br/>Specialty</td>
-              <td style={{ border: "2px solid #0891b2", padding: "10px" }}>
+              <td style={{ border: "1px solid #D1D5DB", padding: "12px", fontWeight: "bold", backgroundColor: "#F1F5F9", textAlign: "center", color: "#1E3A8A" }} dangerouslySetInnerHTML={{ __html: getTableHeader("Specialty", "التخصص", languageView) }}></td>
+              <td style={{ border: "1px solid #D1D5DB", padding: "12px" }}>
                 {inquest.teacherSpecialty || "غير محدد"}
               </td>
-              <td style={{ border: "2px solid #0891b2", padding: "10px", fontWeight: "bold", backgroundColor: "#cffafe", textAlign: "center" }}>التاريخ<br/>Date</td>
-              <td style={{ border: "2px solid #0891b2", padding: "10px" }}>
+              <td style={{ border: "1px solid #D1D5DB", padding: "12px", fontWeight: "bold", backgroundColor: "#F1F5F9", textAlign: "center", color: "#1E3A8A" }} dangerouslySetInnerHTML={{ __html: getTableHeader("Date", "التاريخ", languageView) }}></td>
+              <td style={{ border: "1px solid #D1D5DB", padding: "12px" }}>
                 {new Date(inquest.createdAt).toLocaleDateString("en-GB")}
               </td>
             </tr>
@@ -80,189 +126,235 @@ export function InquestPDFPreview({ inquest, generatingPDF, onClose, onDownload 
         </table>
 
         {/* Section 1: Clarification Request */}
-        <div style={{ border: "3px solid #0891b2", marginBottom: "25px", borderRadius: "8px", overflow: "hidden" }}>
-          <div style={{ background: "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)", color: "white", padding: "12px", fontWeight: "bold", fontSize: "18px", textAlign: "center" }}>
-            1- Clarification Request / طلب إيضاح
+        <div style={{ border: "1px solid #1E3A8A", marginBottom: "30px", borderRadius: "8px", overflow: "hidden" }}>
+          <div style={{ background: "#1E3A8A", color: "white", padding: "15px", fontWeight: "bold", fontSize: "18px", textAlign: "center" }}>
+            {getTitle("1- Clarification Request", "1- طلب إيضاح", languageView)}
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <tbody>
               <tr>
-                <td style={{ width: "50%", padding: "10px", verticalAlign: "top", borderRight: "1px solid #047857" }}>
-                  <p>Venerable / {inquest.teacher.name}</p>
-                  <p>The follow up reveals that:</p>
-                  <div style={{ minHeight: "120px", border: "1px dashed #ccc", padding: "5px", marginTop: "5px", backgroundColor: "#f9f9f9" }}>
-                    {inquest.reason && <div><strong>Reason:</strong> {inquest.reason.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
-                    {inquest.details && <div><strong>Details:</strong> {inquest.details.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
-                    {inquest.clarificationRequest && <div><strong>Request:</strong> {inquest.clarificationRequest.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
-                  </div>
-                </td>
-                <td style={{ width: "50%", padding: "10px", direction: "rtl", verticalAlign: "top" }}>
-                  <p>المكرم / {inquest.teacher.name}</p>
-                  <p>من خلال المتابعة :</p>
-                  <div style={{ minHeight: "120px", border: "1px dashed #ccc", padding: "5px", marginTop: "5px", backgroundColor: "#f9f9f9" }}>
-                    {inquest.reason && <div><strong>السبب:</strong> {inquest.reason.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
-                    {inquest.details && <div><strong>التفاصيل:</strong> {inquest.details.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
-                    {inquest.clarificationRequest && <div><strong>طلب التوضيح:</strong> {inquest.clarificationRequest.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
-                  </div>
-                </td>
+                {showEnglish && (
+                  <td style={{ 
+                    ...(isBoth ? halfWidthStyle : fullWidthStyle), 
+                    padding: "15px", 
+                    verticalAlign: "top", 
+                    borderRight: showArabic ? "1px solid #D1D5DB" : "none",
+                    direction: "ltr" // Ensure English side is LTR
+                  }}>
+                    <p style={{ marginBottom: "10px", fontWeight: "600" }}>Venerable / {inquest.teacher.name}</p>
+                    <p style={{ marginBottom: "10px" }}>The follow up reveals that:</p>
+                    <div style={{ minHeight: "150px", border: "1px solid #D1D5DB", padding: "10px", marginTop: "10px", backgroundColor: "#F9FAFB", borderRadius: "4px" }}>
+                      {inquest.reason && <div style={{ marginBottom: "8px" }}><strong>Reason:</strong> {inquest.reason.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
+                      {inquest.details && <div style={{ marginBottom: "8px" }}><strong>Details:</strong> {inquest.details.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
+                      {inquest.clarificationRequest && <div><strong>Request:</strong> {inquest.clarificationRequest.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
+                    </div>
+                  </td>
+                )}
+                {showArabic && (
+                  <td style={{ 
+                    ...(isBoth ? halfWidthStyle : fullWidthStyle), 
+                    padding: "15px", 
+                    direction: "rtl", 
+                    verticalAlign: "top" 
+                  }}>
+                    <p style={{ marginBottom: "10px", fontWeight: "600" }}>المكرم / {inquest.teacher.name}</p>
+                    <p style={{ marginBottom: "10px" }}>من خلال المتابعة :</p>
+                    <div style={{ minHeight: "150px", border: "1px solid #D1D5DB", padding: "10px", marginTop: "10px", backgroundColor: "#F9FAFB", borderRadius: "4px" }}>
+                      {inquest.reason && <div style={{ marginBottom: "8px" }}><strong>السبب:</strong> {inquest.reason.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
+                      {inquest.details && <div style={{ marginBottom: "8px" }}><strong>التفاصيل:</strong> {inquest.details.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
+                      {inquest.clarificationRequest && <div><strong>طلب التوضيح:</strong> {inquest.clarificationRequest.split('\n').map((line, i) => <div key={i}>{line}</div>)}</div>}
+                    </div>
+                  </td>
+                )}
               </tr>
             </tbody>
           </table>
         </div>
 
         {/* Section 2: Teacher Clarification */}
-        <div style={{ border: "3px solid #10b981", marginBottom: "25px", borderRadius: "8px", overflow: "hidden" }}>
-          <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "white", padding: "12px", fontWeight: "bold", fontSize: "18px", textAlign: "center" }}>
-            2- Clarification / الإيضاح
+        <div style={{ border: "1px solid #059669", marginBottom: "30px", borderRadius: "8px", overflow: "hidden" }}>
+          <div style={{ background: "#059669", color: "white", padding: "15px", fontWeight: "bold", fontSize: "18px", textAlign: "center" }}>
+            {getTitle("2- Clarification", "2- الإيضاح", languageView)}
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <tbody>
               <tr>
-                <td style={{ width: "50%", padding: "15px", verticalAlign: "top", borderRight: "2px solid #10b981" }}>
-                  <div className="flex justify-between items-center">
-                    <p>Venerable Principal /</p>
-                    <p>Greetings</p>
-                  </div>
-                  <div style={{ 
-                    minHeight: inquest.teacherClarification ? `${Math.max(80, inquest.teacherClarification.length / 3)}px` : "80px", 
-                    border: "2px solid #d1fae5", 
-                    padding: "10px", 
-                    marginTop: "8px", 
-                    backgroundColor: "#f0fdf4",
-                    borderRadius: "4px"
+                {showEnglish && (
+                  <td style={{ 
+                    ...(isBoth ? halfWidthStyle : fullWidthStyle), 
+                    padding: "15px", 
+                    verticalAlign: "top", 
+                    borderRight: showArabic ? "1px solid #D1D5DB" : "none",
+                    direction: "ltr" // Ensure English side is LTR
                   }}>
-                    {inquest.teacherClarification?.split('\n').map((line, i) => <div key={i} style={{ marginBottom: "4px" }}>{line}</div>)}
-                  </div>
-                  <p style={{ marginTop: "10px" }}>Name: {inquest.teacher.name}</p>
-                  <p>Signature: ......................... </p>
-                  <p>Date: __ / __ / {new Date(inquest.createdAt).getFullYear()}</p>
-                </td>
-                <td style={{ width: "50%", padding: "15px", direction: "rtl", verticalAlign: "top" }}>
-                  <div className="flex justify-between items-center">
-                    <p>المكرم قائد المدرسة /</p>
-                    <p>تحية طيبة وبعد</p>
-                  </div>
-                  <div style={{ 
-                    minHeight: inquest.teacherClarification ? `${Math.max(80, inquest.teacherClarification.length / 3)}px` : "80px", 
-                    border: "2px solid #d1fae5", 
-                    padding: "10px", 
-                    marginTop: "8px", 
-                    backgroundColor: "#f0fdf4",
-                    borderRadius: "4px"
+                    <div className="flex justify-between items-center" style={{ marginBottom: "10px" }}>
+                      <p>Venerable Principal /</p>
+                      <p>Greetings</p>
+                    </div>
+                    <div style={{ 
+                      minHeight: inquest.teacherClarification ? `${Math.max(100, inquest.teacherClarification.length / 3)}px` : "100px", 
+                      border: "1px solid #D1D5DB", 
+                      padding: "12px", 
+                      marginTop: "8px", 
+                      backgroundColor: "#ECFDF5", // Light green background
+                      borderRadius: "4px"
+                    }}>
+                      {inquest.teacherClarification?.split('\n').map((line, i) => <div key={i} style={{ marginBottom: "4px" }}>{line}</div>)}
+                    </div>
+                    <p style={{ marginTop: "15px" }}>Name: {inquest.teacher.name}</p>
+                    <p>Signature: ......................... </p>
+                    <p>Date: __ / __ / {new Date(inquest.createdAt).getFullYear()}</p>
+                  </td>
+                )}
+                {showArabic && (
+                  <td style={{ 
+                    ...(isBoth ? halfWidthStyle : fullWidthStyle), 
+                    padding: "15px", 
+                    direction: "rtl", 
+                    verticalAlign: "top" 
                   }}>
-                    {inquest.teacherClarification?.split('\n').map((line, i) => <div key={i} style={{ marginBottom: "4px" }}>{line}</div>)}
-                  </div>
-                  <p style={{ marginTop: "10px" }}>الاسم: {inquest.teacher.name}</p>
-                  <p>التوقيع: ......................... </p>
-                  <p>التاريخ: {new Date(inquest.createdAt).getFullYear()} / __ / __</p>
-                </td>
+                    <div className="flex justify-between items-center" style={{ marginBottom: "10px" }}>
+                      <p>المكرم قائد المدرسة /</p>
+                      <p>تحية طيبة وبعد</p>
+                    </div>
+                    <div style={{ 
+                      minHeight: inquest.teacherClarification ? `${Math.max(100, inquest.teacherClarification.length / 3)}px` : "100px", 
+                      border: "1px solid #D1D5DB", 
+                      padding: "12px", 
+                      marginTop: "8px", 
+                      backgroundColor: "#ECFDF5", // Light green background
+                      borderRadius: "4px"
+                    }}>
+                      {inquest.teacherClarification?.split('\n').map((line, i) => <div key={i} style={{ marginBottom: "4px" }}>{line}</div>)}
+                    </div>
+                    <p style={{ marginTop: "15px" }}>الاسم: {inquest.teacher.name}</p>
+                    <p>التوقيع: ......................... </p>
+                    <p>التاريخ: {new Date(inquest.createdAt).getFullYear()} / __ / __</p>
+                  </td>
+                )}
               </tr>
             </tbody>
           </table>
         </div>
 
         {/* Section 3: Principal's Opinion and Decision */}
-        <div style={{ border: "3px solid #f59e0b", marginBottom: "25px", borderRadius: "8px", overflow: "hidden" }}>
-          <div style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", color: "white", padding: "12px", fontWeight: "bold", fontSize: "18px", textAlign: "center" }}>
-            3- Principal's Opinion and Decision / رأي وقرار قائد المدرسة
+        <div style={{ border: "1px solid #D97706", marginBottom: "30px", borderRadius: "8px", overflow: "hidden" }}>
+          <div style={{ background: "#D97706", color: "white", padding: "15px", fontWeight: "bold", fontSize: "18px", textAlign: "center" }}>
+            {getTitle("3- Principal's Opinion and Decision", "3- رأي وقرار قائد المدرسة", languageView)}
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <tbody>
               <tr>
-                <td style={{ width: "50%", padding: "15px", verticalAlign: "top", borderRight: "2px solid #f59e0b" }}>
-                  <p style={{ fontWeight: "bold", marginBottom: "10px", fontSize: "14px" }}>Principal's Opinion:</p>
-                  {inquest.principalOpinion && (
+                {showEnglish && (
+                  <td style={{ 
+                    ...(isBoth ? halfWidthStyle : fullWidthStyle), 
+                    padding: "15px", 
+                    verticalAlign: "top", 
+                    borderRight: showArabic ? "1px solid #D1D5DB" : "none",
+                    direction: "ltr" // Ensure English side is LTR
+                  }}>
+                    <p style={{ fontWeight: "bold", marginBottom: "10px", fontSize: "16px", color: "#D97706" }}>Principal's Opinion:</p>
+                    {inquest.principalOpinion && (
+                      <div style={{ 
+                        backgroundColor: "#FFFBEB", // Light yellow background
+                        border: "1px solid #FBBF24", 
+                        padding: "12px", 
+                        borderRadius: "6px",
+                        marginBottom: "15px",
+                        fontWeight: "600",
+                        fontSize: "14px"
+                      }}>
+                        ☑ {inquest.principalOpinion}
+                      </div>
+                    )}
+                    <p style={{ fontWeight: "bold", marginTop: "15px", fontSize: "16px", color: "#D97706" }}>Final Decision:</p>
                     <div style={{ 
-                      backgroundColor: "#fef3c7", 
-                      border: "2px solid #fbbf24", 
+                      backgroundColor: "#FFFBEB", 
+                      border: "1px solid #FBBF24", 
                       padding: "12px", 
                       borderRadius: "6px",
-                      marginBottom: "15px",
-                      fontWeight: "600",
-                      fontSize: "13px"
+                      marginTop: "8px",
+                      minHeight: "80px"
                     }}>
-                      ☑ {inquest.principalOpinion}
+                      {inquest.decisionText || ""}
                     </div>
-                  )}
-                  <p style={{ fontWeight: "bold", marginTop: "15px", fontSize: "14px" }}>Final Decision:</p>
-                  <div style={{ 
-                    backgroundColor: "#fffbeb", 
-                    border: "2px solid #fbbf24", 
-                    padding: "12px", 
-                    borderRadius: "6px",
-                    marginTop: "8px",
-                    minHeight: "60px"
+                    <p style={{ marginTop: "25px", fontWeight: "700" }}>Principal: Mr. Abdellah Shaker Alghamdi</p>
+                    <p>Signature: ......................... </p>
+                    <p>Date: __ / __ / {new Date(inquest.createdAt).getFullYear()}</p>
+                  </td>
+                )}
+                {showArabic && (
+                  <td style={{ 
+                    ...(isBoth ? halfWidthStyle : fullWidthStyle), 
+                    padding: "15px", 
+                    direction: "rtl", 
+                    verticalAlign: "top" 
                   }}>
-                    {inquest.decisionText || ""}
-                  </div>
-                  <p style={{ marginTop: "20px", fontWeight: "600" }}>Principal: Mr. Abdellah Shaker Alghamdi</p>
-                  <p>Signature: ......................... </p>
-                  <p>Date: __ / __ / {new Date(inquest.createdAt).getFullYear()}</p>
-                </td>
-                <td style={{ width: "50%", padding: "15px", direction: "rtl", verticalAlign: "top" }}>
-                  <p style={{ fontWeight: "bold", marginBottom: "10px", fontSize: "14px" }}>رأي قائد المدرسة:</p>
-                  {inquest.principalOpinion && (
+                    <p style={{ fontWeight: "bold", marginBottom: "10px", fontSize: "16px", color: "#D97706" }}>رأي قائد المدرسة:</p>
+                    {inquest.principalOpinion && (
+                      <div style={{ 
+                        backgroundColor: "#FFFBEB", 
+                        border: "1px solid #FBBF24", 
+                        padding: "12px", 
+                        borderRadius: "6px",
+                        marginBottom: "15px",
+                        fontWeight: "600",
+                        fontSize: "14px"
+                      }}>
+                        ☑ {inquest.principalOpinion}
+                      </div>
+                    )}
+                    <p style={{ fontWeight: "bold", marginTop: "15px", fontSize: "16px", color: "#D97706" }}>القرار النهائي:</p>
                     <div style={{ 
-                      backgroundColor: "#fef3c7", 
-                      border: "2px solid #fbbf24", 
+                      backgroundColor: "#FFFBEB", 
+                      border: "1px solid #FBBF24", 
                       padding: "12px", 
                       borderRadius: "6px",
-                      marginBottom: "15px",
-                      fontWeight: "600",
-                      fontSize: "13px"
+                      marginTop: "8px",
+                      minHeight: "80px"
                     }}>
-                      ☑ {inquest.principalOpinion}
+                      {inquest.decisionText || ""}
                     </div>
-                  )}
-                  <p style={{ fontWeight: "bold", marginTop: "15px", fontSize: "14px" }}>القرار النهائي:</p>
-                  <div style={{ 
-                    backgroundColor: "#fffbeb", 
-                    border: "2px solid #fbbf24", 
-                    padding: "12px", 
-                    borderRadius: "6px",
-                    marginTop: "8px",
-                    minHeight: "60px"
-                  }}>
-                    {inquest.decisionText || ""}
-                  </div>
-                  <p style={{ marginTop: "20px", fontWeight: "600" }}>قائد المدرسة : أ/ عبد الله شاكر الغامدي</p>
-                  <p>التوقيع: ......................... </p>
-                  <p>التاريخ: {new Date(inquest.createdAt).getFullYear()} / __ / __</p>
-                </td>
+                    <p style={{ marginTop: "25px", fontWeight: "700" }}>قائد المدرسة : أ/ عبد الله شاكر الغامدي</p>
+                    <p>التوقيع: ......................... </p>
+                    <p>التاريخ: {new Date(inquest.createdAt).getFullYear()} / __ / __</p>
+                  </td>
+                )}
               </tr>
             </tbody>
           </table>
         </div>
 
-        {/* Draw Attention Section */}
+        {/* Draw Attention Section - Title and Signatures are conditional */}
         {inquest.drawAttentionText && (
           <div style={{ 
-            border: "4px double #dc2626", 
-            margin: "30px 0", 
-            padding: "20px", 
+            border: "2px solid #DC2626", // Solid red border
+            margin: "35px 0", 
+            padding: "25px", 
             borderRadius: "12px", 
-            backgroundColor: "#fef2f2" 
+            backgroundColor: "#FEF2F2" // Very light red background
           }}>
-            <div style={{ textAlign: "center", fontSize: "20px", fontWeight: "bold", color: "#dc2626", marginBottom: "15px" }}>
-              لفت نظر - Draw Attention
+            <div style={{ textAlign: "center", fontSize: "22px", fontWeight: "bold", color: "#DC2626", marginBottom: "20px", borderBottom: "1px dashed #DC2626", paddingBottom: "10px" }}>
+              {getTitle("Draw Attention", "لفت نظر", languageView)}
             </div>
             <div style={{ 
               whiteSpace: "pre-line", 
-              fontSize: "14px", 
-              lineHeight: "2", 
-              textAlign: "right", 
-              direction: "rtl" 
+              fontSize: "15px", 
+              lineHeight: "1.8", 
+              textAlign: isEnglishOnly ? "left" : "right", 
+              direction: isEnglishOnly ? "ltr" : "rtl",
+              padding: "10px"
             }}>
               {inquest.drawAttentionText}
             </div>
-            <div style={{ marginTop: "30px", display: "flex", justifyContent: "space-between" }}>
-              <div style={{ textAlign: "center" }}>
-                <p>توقيع المعلم</p>
-                <div style={{ borderTop: "1px solid #000", width: "200px", margin: "20px auto 0" }}></div>
+            <div style={{ marginTop: "40px", display: "flex", justifyContent: "space-around" }}>
+              <div style={{ textAlign: "center", width: "40%" }}>
+                <p style={{ marginBottom: "5px", fontWeight: "600" }}>{isEnglishOnly ? "Teacher Signature" : "توقيع المعلم"}</p>
+                <div style={{ borderTop: "1px solid #000", width: "100%", margin: "15px auto 0" }}></div>
               </div>
-              <div style={{ textAlign: "center" }}>
-                <p>توقيع المدير</p>
-                <div style={{ borderTop: "1px solid #000", width: "200px", margin: "20px auto 0" }}></div>
+              <div style={{ textAlign: "center", width: "40%" }}>
+                <p style={{ marginBottom: "5px", fontWeight: "600" }}>{isEnglishOnly ? "Principal Signature" : "توقيع المدير"}</p>
+                <div style={{ borderTop: "1px solid #000", width: "100%", margin: "15px auto 0" }}></div>
               </div>
             </div>
           </div>

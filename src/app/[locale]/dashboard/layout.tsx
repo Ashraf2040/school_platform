@@ -3,8 +3,8 @@ import { ReactNode } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
-import { DashboardNavbar } from "@/components/DashboardNavbar";
 import Sidebar from "@/components/Sidebar";
+import DashboardNavbar from "@/components/DashboardNavbar";
 
 
 export default async function DashboardLayout({

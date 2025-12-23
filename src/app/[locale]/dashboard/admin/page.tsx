@@ -1,38 +1,38 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 export default function AdminHome() {
+  const t = useTranslations("AdminHome");
+
   const cards = [
     {
-      name: "Teachers Inquests",
+      name: t("teachersInquestsName"),
       href: "/dashboard/admin/inquests",
-      description: "Create, review, and track inquests for teachers.",
+      description: t("teachersInquestsDescription"),
       icon: "📋",
     },
     {
-      name: "Teachers",
+      name: t("teachersName"),
       href: "/dashboard/admin/teachers",
-      description: "Manage teacher accounts and assignments.",
+      description: t("teachersDescription"),
       icon: "🧑‍🏫",
     },
-   
-{
-  name: "Announcements",
-  href: "/dashboard/admin/announcements",
-  description: "Create and send announcements to teachers.",
-  icon: "📢",
-},
-    // Add more cards here in the future
+    {
+      name: t("announcementsName"),
+      href: "/dashboard/admin/announcements",
+      description: t("announcementsDescription"),
+      icon: "📢",
+    },
   ];
 
   return (
     <div className="mx-auto max-w-6xl py-10 px-6">
-      {/* Header */}
       <div className="mb-10 text-center">
-        <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
-        <p className="mt-3 text-base text-slate-600">
-          Select a module to manage your school efficiently.
-        </p>
+        <h1 className="text-3xl font-bold text-slate-900">{t("adminDashboardTitle")}</h1>
+        <p className="mt-3 text-base text-slate-600">{t("adminDashboardSubtitle")}</p>
       </div>
 
-      {/* Cards Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <a
@@ -46,14 +46,12 @@ export default function AdminHome() {
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-slate-900">{card.name}</h2>
-                <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                  {card.description}
-                </p>
+                <p className="mt-2 text-sm text-slate-600 leading-relaxed">{card.description}</p>
               </div>
             </div>
 
             <div className="mt-6 flex items-center text-sm font-medium text-teal-600 group-hover:text-teal-700">
-              <span>Open module</span>
+              <span>{t("openModule")}</span>
               <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
             </div>
           </a>

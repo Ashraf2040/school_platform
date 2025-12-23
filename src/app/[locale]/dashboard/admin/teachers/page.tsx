@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { useTranslations } from "next-intl";
+// ← adjust if you use next-i18next
 
 type RawTeacher = {
   id: string;
@@ -30,11 +32,13 @@ type Class = { id: string; name: string };
 type Subject = { id: string; name: string };
 
 export default function AdminTeachersPage() {
+  const t  = useTranslations("AdminTeachers");
+
   const { data: session, status } = useSession();
   const router = useRouter();
 
   const [rawTeachers, setRawTeachers] = useState<RawTeacher[]>([]);
-  const [teachers, setTeachers] = useState<Teacher[]>([]); // transformed
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +103,7 @@ export default function AdminTeachersPage() {
         setClasses(classesData);
         setSubjects(subjectsData);
       } catch (err) {
-        toast.error("Failed to load data");
+        toast.error(t("errors.load"));
         console.error(err);
       } finally {
         setLoading(false);
@@ -107,7 +111,7 @@ export default function AdminTeachersPage() {
     };
 
     loadData();
-  }, [session, status, router]);
+  }, [session, status, router, t]);
 
   const refreshData = async () => {
     try {
@@ -116,14 +120,14 @@ export default function AdminTeachersPage() {
       setRawTeachers(raw);
       setTeachers(transformTeachers(raw));
     } catch (err) {
-      toast.error("Failed to refresh teachers");
+      toast.error(t("errors.refresh"));
     }
   };
 
   const handleCreateTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTeacher.password) {
-      toast.error("Password is required");
+      toast.error(t("errors.passwordRequired"));
       return;
     }
 
@@ -139,10 +143,10 @@ export default function AdminTeachersPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to create teacher");
+        throw new Error(data.error || t("errors.createTeacher"));
       }
 
-      toast.success("Teacher created successfully");
+      toast.success(t("success.teacherCreated"));
       await refreshData();
       setNewTeacher({
         username: "",
@@ -154,7 +158,7 @@ export default function AdminTeachersPage() {
       });
       setShowCreateTeacher(false);
     } catch (err: any) {
-      toast.error(err.message || "Failed to create teacher");
+      toast.error(err.message || t("errors.createTeacher"));
     }
   };
 
@@ -182,29 +186,29 @@ export default function AdminTeachersPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to update teacher");
+        throw new Error(data.error || t("errors.updateTeacher"));
       }
 
-      toast.success("Teacher updated successfully");
+      toast.success(t("success.teacherUpdated"));
       await refreshData();
       setShowEditModal(false);
       setEditingTeacher(null);
     } catch (err: any) {
-      toast.error(err.message || "Failed to update teacher");
+      toast.error(err.message || t("errors.updateTeacher"));
     }
   };
 
   const handleDeleteTeacher = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this teacher? This cannot be undone.")) return;
+    if (!confirm(t("confirmDelete"))) return;
 
     try {
       const res = await fetch(`/api/admin/teachers/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete teacher");
+      if (!res.ok) throw new Error(t("errors.deleteTeacher"));
 
-      toast.success("Teacher deleted");
+      toast.success(t("success.teacherDeleted"));
       await refreshData();
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete teacher");
+      toast.error(err.message || t("errors.deleteTeacher"));
     }
   };
 
@@ -217,15 +221,15 @@ export default function AdminTeachersPage() {
         body: JSON.stringify(newSubject),
       });
 
-      if (!res.ok) throw new Error("Failed to create subject");
+      if (!res.ok) throw new Error(t("errors.createSubject"));
 
-      toast.success("Subject created");
+      toast.success(t("success.subjectCreated"));
       const updated = await fetch("/api/subjects").then((r) => r.json());
       setSubjects(updated);
       setNewSubject({ name: "" });
       setShowCreateSubject(false);
     } catch (err: any) {
-      toast.error(err.message || "Failed to create subject");
+      toast.error(err.message || t("errors.createSubject"));
     }
   };
 
@@ -238,22 +242,22 @@ export default function AdminTeachersPage() {
         body: JSON.stringify(newClass),
       });
 
-      if (!res.ok) throw new Error("Failed to create class");
+      if (!res.ok) throw new Error(t("errors.createClass"));
 
-      toast.success("Class created successfully");
+      toast.success(t("success.classCreated"));
       const updated = await fetch("/api/classes").then((r) => r.json());
       setClasses(updated);
       setNewClass({ name: "" });
       setShowCreateClass(false);
     } catch (err: any) {
-      toast.error(err.message || "Failed to create class");
+      toast.error(err.message || t("errors.createClass"));
     }
   };
 
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl py-12 px-6 text-center">
-        <p className="text-base font-medium text-slate-700">Loading teachers and data...</p>
+        <p className="text-base font-medium text-slate-700">{t("loading")}</p>
       </div>
     );
   }
@@ -262,10 +266,8 @@ export default function AdminTeachersPage() {
     <div className="mx-auto max-w-7xl py-8 px-6 space-y-8 font-['Noto_Sans_Arabic',sans-serif]">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-slate-900">Manage Teachers</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Create, edit, and assign teachers to classes and subjects.
-        </p>
+        <h1 className="text-3xl font-bold text-slate-900">{t("title")}</h1>
+        <p className="mt-2 text-sm text-slate-600">{t("subtitle")}</p>
       </div>
 
       {/* Action Buttons */}
@@ -274,38 +276,52 @@ export default function AdminTeachersPage() {
           onClick={() => setShowCreateTeacher(true)}
           className="rounded-xl bg-teal-600 px-6 py-3 text-white font-medium shadow hover:bg-teal-700 transition"
         >
-          Add New Teacher
+          {t("actions.addTeacher")}
         </button>
         <button
           onClick={() => setShowCreateClass(true)}
           className="rounded-xl bg-indigo-600 px-6 py-3 text-white font-medium shadow hover:bg-indigo-700 transition"
         >
-          Add New Class
+          {t("actions.addClass")}
         </button>
         <button
           onClick={() => setShowCreateSubject(true)}
           className="rounded-xl bg-amber-600 px-6 py-3 text-white font-medium shadow hover:bg-amber-700 transition"
         >
-          Add New Subject
+          {t("actions.addSubject")}
         </button>
       </div>
 
       {/* Teachers Table */}
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
         <div className="bg-teal-600 px-6 py-4">
-          <h2 className="text-lg font-semibold text-white">All Teachers ({teachers.length})</h2>
+          <h2 className="text-lg font-semibold text-white">
+            {t("table.title", { count: teachers.length })}
+          </h2>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4 text-left font-medium text-slate-700">Username</th>
-                <th className="px-6 py-4 text-left font-medium text-slate-700">Name</th>
-                <th className="px-6 py-4 text-left font-medium text-slate-700">Email</th>
-                <th className="px-6 py-4 text-left font-medium text-slate-700">Classes</th>
-                <th className="px-6 py-4 text-left font-medium text-slate-700">Subjects</th>
-                <th className="px-6 py-4 text-left font-medium text-slate-700">Actions</th>
+                <th className="px-6 py-4 text-left font-medium text-slate-700">
+                  {t("table.username")}
+                </th>
+                <th className="px-6 py-4 text-left font-medium text-slate-700">
+                  {t("table.name")}
+                </th>
+                <th className="px-6 py-4 text-left font-medium text-slate-700">
+                  {t("table.email")}
+                </th>
+                <th className="px-6 py-4 text-left font-medium text-slate-700">
+                  {t("table.classes")}
+                </th>
+                <th className="px-6 py-4 text-left font-medium text-slate-700">
+                  {t("table.subjects")}
+                </th>
+                <th className="px-6 py-4 text-left font-medium text-slate-700">
+                  {t("table.actions")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -313,8 +329,8 @@ export default function AdminTeachersPage() {
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="text-5xl mb-4 opacity-20">👩‍🏫</div>
-                    <p className="text-slate-600">No teachers found</p>
-                    <p className="text-xs text-slate-500 mt-1">Click "Add New Teacher" to get started.</p>
+                    <p className="text-slate-600">{t("empty.title")}</p>
+                    <p className="text-xs text-slate-500 mt-1">{t("empty.subtitle")}</p>
                   </td>
                 </tr>
               ) : (
@@ -323,7 +339,7 @@ export default function AdminTeachersPage() {
                     <td className="px-6 py-4 font-medium text-slate-900">{teacher.username}</td>
                     <td className="px-6 py-4 font-medium text-slate-900">{teacher.name}</td>
                     <td className="px-6 py-4 text-slate-700">
-                      {teacher.email || <span className="italic text-slate-400">No email</span>}
+                      {teacher.email || <span className="italic text-slate-400">{t("noEmail")}</span>}
                     </td>
                     <td className="px-6 py-4">
                       {teacher.classes.length > 0 ? (
@@ -375,7 +391,7 @@ export default function AdminTeachersPage() {
                           onClick={() => handleDeleteTeacher(teacher.id)}
                           className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-medium text-white hover:bg-rose-700 transition"
                         >
-                          Delete
+                          {t("actions.delete")}
                         </button>
                       </div>
                     </td>
@@ -387,17 +403,16 @@ export default function AdminTeachersPage() {
         </div>
       </div>
 
-      {/* === Modals remain unchanged (only minor styling tweaks) === */}
       {/* Create Teacher Modal */}
       {showCreateTeacher && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-4xl rounded-2xl bg-white p-8 shadow-2xl">
-            <h2 className="mb-6 text-2xl font-bold text-slate-900">Create New Teacher</h2>
+            <h2 className="mb-6 text-2xl font-bold text-slate-900">{t("actions.addTeacher")}</h2>
             <form onSubmit={handleCreateTeacher} className="space-y-6">
               <div className="grid gap-5 md:grid-cols-2">
                 <input
                   type="text"
-                  placeholder="Username"
+                  placeholder={t("table.username")}
                   value={newTeacher.username}
                   onChange={(e) => setNewTeacher({ ...newTeacher, username: e.target.value })}
                   className="rounded-lg border border-slate-300 px-4 py-3 focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
@@ -405,7 +420,7 @@ export default function AdminTeachersPage() {
                 />
                 <input
                   type="text"
-                  placeholder="Full Name"
+                  placeholder={t("table.name")}
                   value={newTeacher.name}
                   onChange={(e) => setNewTeacher({ ...newTeacher, name: e.target.value })}
                   className="rounded-lg border border-slate-300 px-4 py-3 focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
@@ -413,7 +428,7 @@ export default function AdminTeachersPage() {
                 />
                 <input
                   type="email"
-                  placeholder="Email (optional)"
+                  placeholder={t("table.email")}
                   value={newTeacher.email}
                   onChange={(e) => setNewTeacher({ ...newTeacher, email: e.target.value })}
                   className="rounded-lg border border-slate-300 px-4 py-3 focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
@@ -493,7 +508,7 @@ export default function AdminTeachersPage() {
         </div>
       )}
 
-      {/* Edit Teacher Modal – same logic, now uses flat arrays */}
+      {/* Edit Teacher Modal */}
       {showEditModal && editingTeacher && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 overflow-y-auto">
           <div className="w-full max-w-4xl rounded-2xl bg-white p-8 shadow-2xl my-8">
@@ -510,7 +525,7 @@ export default function AdminTeachersPage() {
               <div className="grid gap-5 md:grid-cols-2">
                 <input
                   type="text"
-                  placeholder="Username"
+                  placeholder={t("table.username")}
                   value={editingTeacher.username}
                   onChange={(e) => setEditingTeacher({ ...editingTeacher, username: e.target.value })}
                   className="rounded-lg border border-slate-300 px-4 py-3"
@@ -518,7 +533,7 @@ export default function AdminTeachersPage() {
                 />
                 <input
                   type="text"
-                  placeholder="Full Name"
+                  placeholder={t("table.name")}
                   value={editingTeacher.name}
                   onChange={(e) => setEditingTeacher({ ...editingTeacher, name: e.target.value })}
                   className="rounded-lg border border-slate-300 px-4 py-3"
@@ -526,7 +541,7 @@ export default function AdminTeachersPage() {
                 />
                 <input
                   type="email"
-                  placeholder="Email (optional)"
+                  placeholder={t("table.email")}
                   value={editingTeacher.email || ""}
                   onChange={(e) => setEditingTeacher({ ...editingTeacher, email: e.target.value || null })}
                   className="rounded-lg border border-slate-300 px-4 py-3"
@@ -610,7 +625,7 @@ export default function AdminTeachersPage() {
         </div>
       )}
 
-      {/* Create Class & Subject modals – unchanged (only minor styling) */}
+      {/* Create Class Modal */}
       {showCreateClass && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl">
@@ -644,6 +659,7 @@ export default function AdminTeachersPage() {
         </div>
       )}
 
+      {/* Create Subject Modal */}
       {showCreateSubject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl">
