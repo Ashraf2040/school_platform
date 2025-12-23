@@ -1,7 +1,7 @@
 // src/components/DashboardNavbar.tsx
 "use client";
 
-import Link from "next/link";
+import {Link} from "@/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";

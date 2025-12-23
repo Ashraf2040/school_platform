@@ -1,8 +1,7 @@
 // src/app/dashboard/Sidebar.tsx
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import {Link, usePathname} from "@/navigation";
 import { useTranslations } from "next-intl";
 
 // Simple inline SVG icons (no external dependency)
