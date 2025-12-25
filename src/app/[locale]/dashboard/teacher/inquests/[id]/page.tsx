@@ -1,4 +1,3 @@
-// app/dashboard/teacher/inquests/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -19,7 +18,7 @@ type Inquest = {
   decisionText?: string;
   teacherClarification?: string;
   attachmentUrl?: string;
-  drawAttentionText?: string; // ← NEW
+  drawAttentionText?: string;
   status: "PENDING" | "RESPONDED" | "COMPLETED";
   createdAt: string;
   academicYear: { name: string };
@@ -38,48 +37,87 @@ export default function TeacherInquestDetail() {
   const [form, setForm] = useState({ teacherClarification: "" });
   const [file, setFile] = useState<File | null>(null);
 
+  // =========================
+  // Load Inquest
+  // =========================
   useEffect(() => {
     const loadInquest = async () => {
       try {
+        console.log("📡 Fetching inquest:", id);
+
         const res = await fetch(`/api/inquests/${id}`);
+        console.log("📥 Inquest response status:", res.status);
+
         if (!res.ok) throw new Error("Failed to load inquest");
+
         const data = await res.json();
+        console.log("✅ Inquest data:", data);
+
         setInquest(data);
         setForm({ teacherClarification: data.teacherClarification || "" });
-        if (data.status === "PENDING") setShowForm(true);
 
-        // Mark notification as read when teacher views this inquest
+        if (data.status === "PENDING") {
+          setShowForm(true);
+        }
+
+        // Mark notification as read
         await fetch("/api/notifications/mark-read", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ inquestId: id }),
         });
-      } catch {
+
+        console.log("🔔 Notification marked as read");
+      } catch (err) {
+        console.error("❌ Load inquest error:", err);
         toast.error("Failed to load inquest");
-        router.push("/dashboard/teacher/inquests");
+        suggestRedirect();
       }
     };
+
     loadInquest();
   }, [id, router]);
 
+  const suggestRedirect = () => {
+    router.push("/dashboard/teacher/inquests");
+  };
+
+  // =========================
+  // Submit Response
+  // =========================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inquest) return;
 
     setPending(true);
+
     try {
       let attachmentUrl = inquest.attachmentUrl;
+
+      // -------- Upload file --------
       if (file) {
+        console.log("📤 Uploading file:", file.name, file.type, file.size);
+
         const formData = new FormData();
         formData.append("file", file);
+
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         });
+
+        console.log("📥 Upload response status:", uploadRes.status);
+
         if (!uploadRes.ok) throw new Error("Failed to upload file");
+
         const uploadData = await uploadRes.json();
+        console.log("✅ Uploaded file URL:", uploadData.url);
+
         attachmentUrl = uploadData.url;
       }
+
+      // -------- Patch inquest --------
+      console.log("📝 Submitting clarification with attachment:", attachmentUrl);
 
       const res = await fetch(`/api/inquests/${id}`, {
         method: "PATCH",
@@ -90,18 +128,29 @@ export default function TeacherInquestDetail() {
           status: "RESPONDED",
         }),
       });
+
+      console.log("📥 Patch response status:", res.status);
+
       if (!res.ok) throw new Error("Failed to submit response");
+
       toast.success("Response submitted successfully");
       setShowForm(false);
+
       const updated = await fetch(`/api/inquests/${id}`).then((r) => r.json());
+      console.log("🔄 Updated inquest:", updated);
+
       setInquest(updated);
-    } catch (e: any) {
-      toast.error(e.message || "Something went wrong");
+    } catch (err: any) {
+      console.error("❌ Submit error:", err);
+      toast.error(err.message || "Something went wrong");
     } finally {
       setPending(false);
     }
   };
 
+  // =========================
+  // Loading state
+  // =========================
   if (!inquest) {
     return (
       <div className="mx-auto max-w-6xl py-10 px-6">
@@ -308,19 +357,26 @@ export default function TeacherInquestDetail() {
           )}
 
           {/* Attachment */}
-          {inquest.attachmentUrl && (
-            <section className="border-t pt-6">
-              <h3 className="text-base font-semibold text-slate-900 mb-3">Attachment</h3>
-              <a
-                href={inquest.attachmentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-teal-600 hover:text-teal-700 hover:underline"
-              >
-                View Uploaded PDF →
-              </a>
-            </section>
-          )}
+        {inquest.attachmentUrl && (
+        <section className="border-t pt-6">
+          <h3 className="text-base font-semibold text-slate-900 mb-3">
+            Attachment
+          </h3>
+
+          <a
+            href={inquest.attachmentUrl}
+            download
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              console.log("📄 Opening attachment URL:", inquest.attachmentUrl);
+            }}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-teal-600 hover:text-teal-700 hover:underline"
+          >
+            Download / View Uploaded PDF →
+          </a>
+        </section>
+      )}
 
           {/* Response Form */}
           {showForm && inquest.status === "PENDING" && (
