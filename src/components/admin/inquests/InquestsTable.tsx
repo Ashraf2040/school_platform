@@ -113,7 +113,7 @@ export function InquestsTable({
                           e.stopPropagation();
                           onAddDecision(inquest);
                         }}
-                        className="text-teal-600 hover:text-teal-900"
+                        className="text-teal-600 hover:text-teal-900 cursor-pointer"
                       >
                         {t("actions.addDecision")}
                       </button>
@@ -125,7 +125,7 @@ export function InquestsTable({
                           e.stopPropagation();
                           onPreview(inquest);
                         }}
-                        className="text-indigo-600 hover:text-indigo-900"
+                        className="text-indigo-600 hover:text-indigo-900 cursor-pointer"
                       >
                         {t("actions.preview")}
                       </button>
