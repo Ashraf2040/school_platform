@@ -142,7 +142,7 @@ export default function HomePage() {
                     "linear-gradient(to right, #22c55e, #38bdf8, #f97316)",
                 }}
               >
-                {t("heroTitle")}
+              { locale === "en" ? <span className="text-7xl">O</span> : ""}{t("heroTitle")}
               </span>
             </h1>
 
