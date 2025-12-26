@@ -1,5 +1,5 @@
 // src/lib/prisma.ts
-import 'dotenv/config';
+// import 'dotenv/config'; // Next.js handles environment variables
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 

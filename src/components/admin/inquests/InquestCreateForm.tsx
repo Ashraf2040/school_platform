@@ -95,7 +95,7 @@ export function InquestCreateForm({
 
       <form onSubmit={onSubmit} className="space-y-6">
         {/* Academic Year & Teacher */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               {t("academicYear")} <span className="text-red-500">*</span>
@@ -215,7 +215,7 @@ export function InquestCreateForm({
           <p className="text-sm font-medium text-slate-700 mb-3">
             {t("teacherInfo")}
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 {t("jobTitle")}

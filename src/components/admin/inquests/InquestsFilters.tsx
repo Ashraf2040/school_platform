@@ -37,7 +37,7 @@ export function InquestsFilters({
 
   return (
     <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-6">
-      <div className="grid gap-5 md:grid-cols-5">
+      <div className="grid gap-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
         {/* Academic Year */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -113,7 +113,7 @@ export function InquestsFilters({
         </div>
 
         {/* Create Button */}
-        <div className="flex items-end">
+        <div className="flex items-end col-span-2 sm:col-span-1">
           <button
             onClick={onCreateNew}
             className="w-full rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-teal-600 transition"

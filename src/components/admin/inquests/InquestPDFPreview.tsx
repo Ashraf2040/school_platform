@@ -40,9 +40,9 @@ export function InquestPDFPreview({ inquest, generatingPDF, onClose, onDownload 
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="text-xl font-semibold text-slate-900">PDF Preview</h2>
-        <div className="flex items-center gap-5">
+        <div className="flex flex-wrap items-center gap-5">
           {/* Language Select Box */}
           <div className="flex items-center gap-2">
             <label htmlFor="language-select" className="text-sm font-medium text-slate-700">View:</label>
@@ -58,7 +58,7 @@ export function InquestPDFPreview({ inquest, generatingPDF, onClose, onDownload 
             </select>
           </div>
           {/* Action Buttons */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <button
               onClick={onClose}
               className="rounded-lg bg-gray-600 px-5 py-2 text-sm font-medium text-white shadow hover:bg-gray-700 transition"

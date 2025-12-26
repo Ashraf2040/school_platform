@@ -17,6 +17,7 @@
     "bcryptjs": "^3.0.3",
     "csv-parse": "^6.1.0",
     "daisyui": "^5.5.13",
+    "dotenv": "^17.2.3",
     "html2canvas": "^1.4.1",
     "html2canvas-pro": "^1.5.13",
     "jspdf": "^3.0.4",
@@ -31,7 +32,9 @@
     "react-dom": "19.2.1",
     "react-hot-toast": "^2.6.0",
     "resend": "^6.6.0",
-    "use-debounce": "^10.0.6"
+    "use-debounce": "^10.0.6",
+    "uuid": "^13.0.0",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

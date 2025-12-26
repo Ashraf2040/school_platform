@@ -43,8 +43,8 @@ export default function AnnouncementsTable({ announcements, locale }: Props) {
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="overflow-x-auto rounded-xl shadow-lg">
+      <table className="min-w-full bg-white">
         <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
           <tr>
             <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -68,13 +68,13 @@ export default function AnnouncementsTable({ announcements, locale }: Props) {
               className="hover:bg-slate-50 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-[1.001]"
               onClick={() => router.push(`/dashboard/admin/announcements/${a.id}`)}
             >
-              <td className="px-6 py-5">
+              <td className="px-6 py-5 whitespace-nowrap">
                 <div className="text-sm font-medium text-slate-900 line-clamp-2">
                   {a.title}
                 </div>
               </td>
 
-              <td className="px-6 py-5">
+              <td className="px-6 py-5 whitespace-nowrap">
                 <span
                   className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getTypeBadgeColor(
                     a.type
@@ -84,7 +84,7 @@ export default function AnnouncementsTable({ announcements, locale }: Props) {
                 </span>
               </td>
 
-              <td className="px-6 py-5 text-sm text-slate-600">
+              <td className="px-6 py-5 text-sm text-slate-600 whitespace-nowrap">
                 {new Date(a.date).toLocaleDateString(locale, {
                   year: "numeric",
                   month: "long",
@@ -92,7 +92,7 @@ export default function AnnouncementsTable({ announcements, locale }: Props) {
                 })}
               </td>
 
-              <td className="px-6 py-5 text-sm">
+              <td className="px-6 py-5 text-sm whitespace-nowrap">
                 {a.attachmentUrl ? (
                   <a
                     href={a.attachmentUrl}

@@ -1,10 +1,12 @@
 // src/app/dashboard/Sidebar.tsx
 "use client";
 
-import {Link, usePathname} from "@/navigation";
+import { Link, usePathname } from "@/navigation";
 import { useTranslations } from "next-intl";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
 
-// Simple inline SVG icons (no external dependency)
+// Simple inline SVG icons (unchanged)
 const icons = {
   overview: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,92 +43,156 @@ const icons = {
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const t = useTranslations("Sidebar");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
 
-  return (
-    <aside className="w-64 border-r border-slate-200 bg-white shadow-sm">
-      <div className="flex h-full flex-col">
-        <nav className="flex-1 px-4 space-y-1">
-          {role === "ADMIN" && (
-            <>
-              <SidebarLink href="/dashboard/admin" icon={icons.overview} active={isActive("/dashboard/admin")}>
-                {t("overview")}
-              </SidebarLink>
+  const closeMenu = () => setMobileMenuOpen(false);
 
-              <SidebarLink href="/dashboard/admin/inquests" icon={icons.inquests} active={isActive("/dashboard/admin/inquests")}>
-                {t("teachersInquests")}
-              </SidebarLink>
+  const navContent = (
+    <>
+      {role === "ADMIN" && (
+        <>
+          <SidebarLink href="/dashboard/admin" icon={icons.overview} active={isActive("/dashboard/admin")} onClick={closeMenu}>
+            {t("overview")}
+          </SidebarLink>
 
-              <SidebarLink href="/dashboard/admin/teachers" icon={icons.teachers} active={isActive("/dashboard/admin/teachers")}>
-                {t("teachers")}
-              </SidebarLink>
+          <SidebarLink href="/dashboard/admin/inquests" icon={icons.inquests} active={isActive("/dashboard/admin/inquests")} onClick={closeMenu}>
+            {t("teachersInquests")}
+          </SidebarLink>
 
-              <SidebarLink href="/dashboard/admin/announcements" icon={icons.announcements} active={isActive("/dashboard/admin/announcements")}>
-                {t("announcements")}
-              </SidebarLink>
+          <SidebarLink href="/dashboard/admin/teachers" icon={icons.teachers} active={isActive("/dashboard/admin/teachers")} onClick={closeMenu}>
+            {t("teachers")}
+          </SidebarLink>
 
-              <SidebarLink
-                href="/dashboard/admin/daily-activities-admin"
-                icon={icons.lessons}
-                active={isActive("/dashboard/admin/daily-activities-admin")}
-              >
-                {t("dailyLessonsManagement")}
-              </SidebarLink>
-            </>
-          )}
+          <SidebarLink href="/dashboard/admin/announcements" icon={icons.announcements} active={isActive("/dashboard/admin/announcements")} onClick={closeMenu}>
+            {t("announcements")}
+          </SidebarLink>
 
-          {role === "TEACHER" && (
-            <>
-              <SidebarLink href="/dashboard/teacher" icon={icons.overview} active={isActive("/dashboard/teacher")}>
-                {t("overview")}
-              </SidebarLink>
+          <SidebarLink
+            href="/dashboard/admin/daily-activities-admin"
+            icon={icons.lessons}
+            active={isActive("/dashboard/admin/daily-activities-admin")}
+            onClick={closeMenu}
+          >
+            {t("dailyLessonsManagement")}
+          </SidebarLink>
+        </>
+      )}
 
-              <SidebarLink href="/dashboard/teacher/inquests" icon={icons.inquests} active={isActive("/dashboard/teacher/inquests")}>
-                {t("myInquests")}
-              </SidebarLink>
+      {role === "TEACHER" && (
+        <>
+          <SidebarLink href="/dashboard/teacher" icon={icons.overview} active={isActive("/dashboard/teacher")} onClick={closeMenu}>
+            {t("overview")}
+          </SidebarLink>
 
-              <SidebarLink href="/dashboard/teacher/announcements" icon={icons.announcements} active={isActive("/dashboard/teacher/announcements")}>
-                {t("announcements")}
-              </SidebarLink>
+          <SidebarLink href="/dashboard/teacher/inquests" icon={icons.inquests} active={isActive("/dashboard/teacher/inquests")} onClick={closeMenu}>
+            {t("myInquests")}
+          </SidebarLink>
 
-              <SidebarLink
-                href="/dashboard/admin/daily-activities-teacher"
-                icon={icons.lessons}
-                active={isActive("/dashboard/admin/daily-activities-teacher")}
-              >
-                {t("dailyLessonsManagement")}
-              </SidebarLink>
-            </>
-          )}
+          <SidebarLink href="/dashboard/teacher/announcements" icon={icons.announcements} active={isActive("/dashboard/teacher/announcements")} onClick={closeMenu}>
+            {t("announcements")}
+          </SidebarLink>
 
-          <div className="pt-6">
-            <div className="h-px bg-slate-200 mb-3" />
-            <SidebarLink href="/dashboard/notifications" icon={icons.notifications} active={isActive("/dashboard/notifications")}>
-              {t("notifications")}
-            </SidebarLink>
-          </div>
-        </nav>
+          <SidebarLink
+            href="/dashboard/teacher/daily-activities-teacher"  
+            icon={icons.lessons}
+            active={isActive("/dashboard/teacher/daily-activities-teacher")}
+            onClick={closeMenu}
+          >
+            {t("dailyLessonsManagement")}
+          </SidebarLink>
+        </>
+      )}
+
+      <div className="pt-6">
+        <div className="h-px bg-slate-200 mb-3" />
+        <SidebarLink href="/dashboard/notifications" icon={icons.notifications} active={isActive("/dashboard/notifications")} onClick={closeMenu}>
+          {t("notifications")}
+        </SidebarLink>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar - hidden on mobile */}
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-slate-200 lg:bg-white lg:shadow-sm">
+        <nav className="flex-1 px-4 py-6 space-y-1">{navContent}</nav>
+      </aside>
+
+      {/* Mobile Header + Burger */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between px-4 h-16">
+          <Link href="/dashboard" className="text-xl font-semibold text-teal-700">
+            Dashboard
+          </Link>
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 transition-opacity"
+            onClick={closeMenu}
+          />
+
+          {/* Panel */}
+          <div className="relative flex flex-col w-80 max-w-full bg-white shadow-xl animate-in slide-in-from-left">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900">Menu</h2>
+              <button
+                onClick={closeMenu}
+                className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+              {navContent}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Add top padding on mobile so content isn't hidden under fixed header */}
+      <div className="lg:hidden h-16" />
+    </>
   );
 }
 
+// Updated SidebarLink to accept optional onClick (for mobile closing)
 function SidebarLink({
   href,
   icon,
   children,
   active,
+  onClick,
 }: {
   href: string;
   icon: React.ReactNode;
   children: React.ReactNode;
   active: boolean;
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={`
         group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200
         ${active

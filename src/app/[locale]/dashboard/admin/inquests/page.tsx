@@ -280,7 +280,7 @@ const handlePreview = () => setShowPDFPreview(true);
         onCreateNew={() => setShowForm(true)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:block gap-8">
         <InquestsTable
           inquests={inquests}
           selectedInquest={selectedInquest}

@@ -69,7 +69,7 @@ export default function DashboardNavbar() {
       .toUpperCase() || "U";
 console.log(unreadCount);
   return (
-    <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md shadow-sm">
+    <header className=" bg-white/80  backdrop-blur-md md:h-24">
       <div className="mx-auto max-w-7xl px-4 py-2.5 flex items-center justify-between gap-4">
         {/* Left */}
         <Link

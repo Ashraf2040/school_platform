@@ -22,7 +22,7 @@ export function InquestsTable({
   const t = useTranslations("InquestsTable");
 
   return (
-    <div className="lg:col-span-3 bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-md border  border-slate-200 overflow-hidden">
       <div className="p-4 border-b border-slate-200">
         <h2 className="text-lg font-semibold text-slate-900">
           {t("title", { count: inquests.length })}
@@ -32,7 +32,7 @@ export function InquestsTable({
         </p>
       </div>
 
-      <div className="overflow-x-auto max-h-[600px]">
+      <div className="overflow-x-auto max-h-[600px] rounded-b-2xl">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50 sticky top-0">
             <tr>
@@ -88,7 +88,7 @@ export function InquestsTable({
                     {t(`types.${inquest.inquestType}`)}
                   </td>
 
-                  <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">
+                  <td className="px-6 py-4 text-sm text-slate-500 max-w-xs min-w-[150px] truncate">
                     {inquest.reason}
                   </td>
 
@@ -106,7 +106,7 @@ export function InquestsTable({
                     </span>
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium min-w-[150px]">
                     {inquest.status === "RESPONDED" && (
                       <button
                         onClick={(e) => {

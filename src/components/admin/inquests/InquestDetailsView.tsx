@@ -10,7 +10,7 @@ type Props = {
 export function InquestDetailsView({ inquest, onAddDecision, onPreview }: Props) {
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Inquest Details</h2>
           <div className="flex flex-wrap gap-2 mt-3">
@@ -37,7 +37,7 @@ export function InquestDetailsView({ inquest, onAddDecision, onPreview }: Props)
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           {inquest.status === "RESPONDED" && (
             <button
               onClick={onAddDecision}

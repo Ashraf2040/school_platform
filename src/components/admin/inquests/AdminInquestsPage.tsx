@@ -383,7 +383,8 @@ const handleDecisionSubmit = async (e: React.FormEvent) => {
         }}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="lg:col-span-3">
         <InquestsTable
           inquests={inquests}
           selectedInquest={selectedInquest}
@@ -402,8 +403,9 @@ const handleDecisionSubmit = async (e: React.FormEvent) => {
             handlePreview();
           }}
         />
+      </div>
 
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-2">
           <div className="bg-white rounded-2xl shadow-md border border-slate-200">
             {showForm ? (
               <InquestCreateForm
