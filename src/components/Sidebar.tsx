@@ -1,12 +1,9 @@
-// src/app/dashboard/Sidebar.tsx
 "use client";
 
+import { useState, useEffect } from "react";
 import { Link, usePathname } from "@/navigation";
-import { useTranslations } from "next-intl";
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
-// Simple inline SVG icons (unchanged)
 const icons = {
   overview: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,174 +35,271 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
     </svg>
   ),
+  close: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+  menu: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  ),
 };
 
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const t = useTranslations("Sidebar");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const locale = useLocale();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(`${href}/`);
+  const isRTL = locale !== "en";
 
-  const closeMenu = () => setMobileMenuOpen(false);
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
 
-  const navContent = (
-    <>
-      {role === "ADMIN" && (
-        <>
-          <SidebarLink href="/dashboard/admin" icon={icons.overview} active={isActive("/dashboard/admin")} onClick={closeMenu}>
-            {t("overview")}
-          </SidebarLink>
+  const isActive = (href: string, exact: boolean = false) => {
+    if (exact) return pathname === href;
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
-          <SidebarLink href="/dashboard/admin/inquests" icon={icons.inquests} active={isActive("/dashboard/admin/inquests")} onClick={closeMenu}>
-            {t("teachersInquests")}
-          </SidebarLink>
-
-          <SidebarLink href="/dashboard/admin/teachers" icon={icons.teachers} active={isActive("/dashboard/admin/teachers")} onClick={closeMenu}>
-            {t("teachers")}
-          </SidebarLink>
-
-          <SidebarLink href="/dashboard/admin/announcements" icon={icons.announcements} active={isActive("/dashboard/admin/announcements")} onClick={closeMenu}>
-            {t("announcements")}
-          </SidebarLink>
-
-          <SidebarLink
-            href="/dashboard/admin/daily-activities-admin"
-            icon={icons.lessons}
-            active={isActive("/dashboard/admin/daily-activities-admin")}
-            onClick={closeMenu}
-          >
-            {t("dailyLessonsManagement")}
-          </SidebarLink>
-        </>
-      )}
-
-      {role === "TEACHER" && (
-        <>
-          <SidebarLink href="/dashboard/teacher" icon={icons.overview} active={isActive("/dashboard/teacher")} onClick={closeMenu}>
-            {t("overview")}
-          </SidebarLink>
-
-          <SidebarLink href="/dashboard/teacher/inquests" icon={icons.inquests} active={isActive("/dashboard/teacher/inquests")} onClick={closeMenu}>
-            {t("myInquests")}
-          </SidebarLink>
-
-          <SidebarLink href="/dashboard/teacher/announcements" icon={icons.announcements} active={isActive("/dashboard/teacher/announcements")} onClick={closeMenu}>
-            {t("announcements")}
-          </SidebarLink>
-
-          <SidebarLink
-            href="/dashboard/teacher/daily-activities-teacher"  
-            icon={icons.lessons}
-            active={isActive("/dashboard/teacher/daily-activities-teacher")}
-            onClick={closeMenu}
-          >
-            {t("dailyLessonsManagement")}
-          </SidebarLink>
-        </>
-      )}
-
-      <div className="pt-6">
-        <div className="h-px bg-slate-200 mb-3" />
-        <SidebarLink href="/dashboard/notifications" icon={icons.notifications} active={isActive("/dashboard/notifications")} onClick={closeMenu}>
-          {t("notifications")}
-        </SidebarLink>
-      </div>
-    </>
-  );
+  const toggleSidebar = () => setIsOpen(!isOpen);
 
   return (
     <>
-      {/* Desktop Sidebar - hidden on mobile */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-slate-200 lg:bg-white lg:shadow-sm">
-        <nav className="flex-1 px-4 py-6 space-y-1">{navContent}</nav>
-      </aside>
+      <button
+        onClick={toggleSidebar}
+        className={`fixed top-4 z-50 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 shadow-lg shadow-teal-500/40 text-white transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-teal-300 md:hidden ${
+          isRTL ? "left-4" : "right-4"
+        }`}
+        aria-label="Toggle Menu"
+      >
+        {isOpen ? icons.close : icons.menu}
+      </button>
 
-      {/* Mobile Header + Burger */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm">
-        <div className="flex items-center justify-between px-4 h-16">
-          <Link href="/dashboard" className="text-xl font-semibold text-teal-700">
-            Dashboard
-          </Link>
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-            aria-label="Open menu"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 transition-opacity"
-            onClick={closeMenu}
-          />
-
-          {/* Panel */}
-          <div className="relative flex flex-col w-80 max-w-full bg-white shadow-xl animate-in slide-in-from-left">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Menu</h2>
-              <button
-                onClick={closeMenu}
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-                aria-label="Close menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
-              {navContent}
-            </nav>
-          </div>
-        </div>
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
       )}
 
-      {/* Add top padding on mobile so content isn't hidden under fixed header */}
-      <div className="lg:hidden h-16" />
+      <aside
+        className={`
+          fixed inset-y-0 z-50 flex h-full w-72 flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out
+          ${isRTL ? "right-0" : "left-0"}
+          ${isOpen ? "translate-x-0" : (isRTL ? "translate-x-full" : "-translate-x-full")}
+          md:relative md:translate-x-0 md:w-72 md:shadow-none md:border-r md:border-slate-100
+        `}
+      >
+        <div className="flex h-20 items-center justify-center border-b border-slate-50 bg-gradient-to-r from-white to-slate-50/50 md:hidden">
+          <span className="text-xl font-black tracking-tight text-slate-800">
+            {role === "ADMIN" ? "Admin" : "Teacher"}
+          </span>
+        </div>
+
+        <div className="flex h-full flex-col overflow-y-auto px-4 py-6">
+          <nav className="space-y-1.5">
+            {role === "ADMIN" && (
+              <>
+                <SidebarLink
+                  href="/dashboard/admin"
+                  icon={icons.overview}
+                  active={isActive("/dashboard/admin", true)}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {t("overview")}
+                </SidebarLink>
+
+                <SidebarLink
+                  href="/dashboard/admin/inquests"
+                  icon={icons.inquests}
+                  active={isActive("/dashboard/admin/inquests")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {t("teachersInquests")}
+                </SidebarLink>
+
+                <SidebarLink
+                  href="/dashboard/admin/teachers"
+                  icon={icons.teachers}
+                  active={isActive("/dashboard/admin/teachers")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {t("teachers")}
+                </SidebarLink>
+
+                <SidebarLink
+                  href="/dashboard/admin/announcements"
+                  icon={icons.announcements}
+                  active={isActive("/dashboard/admin/announcements")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {t("announcements")}
+                </SidebarLink>
+
+                <SidebarLink
+                  href="/dashboard/admin/daily-activities-admin"
+                  icon={icons.lessons}
+                  active={isActive("/dashboard/admin/daily-activities-admin")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {t("dailyLessonsManagement")}
+                </SidebarLink>
+                <SidebarLink
+                  href="/dashboard/admin/teachers-weekly-evaluations"
+                  icon={icons.lessons}
+                  active={isActive("/dashboard/admin/teachers-weekly-evaluations")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {`${
+                    locale === "en"
+                      ? "Weekly Follow-up "
+                      : "تقارير التقييم الاسبوعية"
+                  }`}
+                </SidebarLink>
+              </>
+            )}
+
+            {role === "TEACHER" && (
+              <>
+                <SidebarLink
+                  href="/dashboard/teacher"
+                  icon={icons.overview}
+                  active={isActive("/dashboard/teacher", true)}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {t("overview")}
+                </SidebarLink>
+
+                <SidebarLink
+                  href="/dashboard/teacher/inquests"
+                  icon={icons.inquests}
+                  active={isActive("/dashboard/teacher/inquests")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {t("myInquests")}
+                </SidebarLink>
+
+                <SidebarLink
+                  href="/dashboard/teacher/announcements"
+                  icon={icons.announcements}
+                  active={isActive("/dashboard/teacher/announcements")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {t("announcements")}
+                </SidebarLink>
+
+                <SidebarLink
+                  href="/dashboard/admin/daily-activities-teacher"
+                  icon={icons.lessons}
+                  active={isActive("/dashboard/admin/daily-activities-teacher")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {t("dailyLessonsManagement")}
+                </SidebarLink>
+                <SidebarLink
+                  href="/dashboard/teacher/my-weekly-evaluations"
+                  icon={icons.lessons}
+                  active={isActive("/dashboard/teacher/my-weekly-evaluations")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {`${
+                    locale === "en"
+                      ? "Weekly Follow up"
+                      : "تقارير التقييم الاسبوعية"
+                  }`}
+                </SidebarLink>
+              </>
+            )}
+
+            <div className="pt-6">
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink-0 mx-2 text-xs text-slate-400 font-medium tracking-wider uppercase">System</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+              <SidebarLink
+                href="/dashboard/notifications"
+                icon={icons.notifications}
+                active={isActive("/dashboard/notifications")}
+                onClick={() => setIsOpen(false)}
+                locale={locale}
+              >
+                {t("notifications")}
+              </SidebarLink>
+            </div>
+          </nav>
+        </div>
+      </aside>
     </>
   );
 }
 
-// Updated SidebarLink to accept optional onClick (for mobile closing)
 function SidebarLink({
   href,
   icon,
   children,
   active,
   onClick,
+  locale,
 }: {
   href: string;
   icon: React.ReactNode;
   children: React.ReactNode;
   active: boolean;
   onClick?: () => void;
+  locale: string;
 }) {
+  const isRTL = locale !== "en";
+
   return (
     <Link
       href={href}
       onClick={onClick}
       className={`
-        group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200
-        ${active
-          ? "bg-teal-50 text-teal-700 shadow-sm"
-          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+        group relative flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200
+        ${
+          active
+            ? "bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-700 shadow-sm ring-1 ring-teal-100"
+            : "text-slate-600 hover:bg-slate-50/80 hover:text-slate-900"
         }
       `}
     >
-      <span className={active ? "text-teal-600" : "text-slate-500 group-hover:text-slate-700"}>
+      <span
+        className={`
+          flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-300 shrink-0
+          ${
+            active
+              ? "border-teal-100 bg-white text-teal-600 shadow-md shadow-teal-100"
+              : "border-transparent bg-slate-100/50 text-slate-400 group-hover:bg-white group-hover:text-slate-600 group-hover:shadow-sm"
+          }
+        `}
+      >
         {icon}
       </span>
-      <span>{children}</span>
-      {active && <div className="ml-auto h-8 w-1 rounded-full bg-teal-600" />}
+      <span className={`truncate ${active ? "font-bold" : ""}`}>
+        {children}
+      </span>
+      {active && (
+        <div
+          className={`absolute top-3 bottom-3 w-1 rounded-full bg-gradient-to-b from-teal-400 to-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] ${
+            isRTL ? "left-0" : "right-0"
+          }`}
+        />
+      )}
     </Link>
   );
 }

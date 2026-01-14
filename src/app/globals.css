@@ -33,7 +33,18 @@
     }
   }
 }
-
+@media print {
+  button, input, textarea, select, .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  .min-h-screen {
+    background: white !important;
+    min-height: auto !important;
+  }
+}
 /* ===============================
    Buttons
 ================================ */

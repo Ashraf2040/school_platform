@@ -45,7 +45,7 @@ model User {
   jobTitle   String?
   specialty  String?
   schoolName String?
-
+weeklyReports WeeklyReport[]
   // Relations from first project
   inquestsCreated        Inquest[]                @relation("InquestsCreated")
   inquestsReceived       Inquest[]                @relation("InquestsReceived")
@@ -331,4 +331,62 @@ model ScheduleItem {
   @@index([teacherId])
   @@index([subjectId])
   @@index([dayIndex, session])
+}
+model WeeklyReport {
+  id           String    @id @default(uuid())
+  teacherId    String
+  weekStart    DateTime 
+  weekEnd      DateTime?
+   // Start date of the week (e.g. Monday)
+  submittedAt  DateTime? // When teacher submitted Part 1
+  evaluatedAt  DateTime? // When admin completed evaluation
+
+  // Teacher-filled data (Part 1) - keep as JSON for flexibility
+  teacherData  Json
+
+  // Admin evaluation data (Part 2) - split into structured fields for easier querying & reporting
+  adminData    Json?     // Optional fallback JSON (for any extra fields)
+  
+  // Structured admin scores (recommended for analytics & validation)
+  adminClassroomLessonPlanning         Int? // 0-12
+  adminClassroomTeachingMethods        Int? // 0-12
+  adminClassroomStudentEngagement      Int? // 0-12
+  adminClassroomEnvironment            Int? // 0-12
+  adminClassroomStudentFeedback        Int? // 0-12
+
+  adminDigitalPlatformUsage            Int? // 0-8
+  adminDigitalCommunication            Int? // 0-8
+  adminDigitalAssignmentMonitoring     Int? // 0-9
+
+  adminMonitoringAtRisk                Int? // 0-8
+  adminMonitoringHighPerforming        Int? // 0-8
+
+  adminIssuesManagement                Int? // 0-5
+
+  adminTotalScore                      Int? // Calculated total (0-100)
+  adminEvaluationLevel                 String? // "excellent" | "good" | "satisfactory" | "needsImprovement"
+  adminTeacherLevel                    Int?  // 1 | 2 | 3 | 4
+
+  adminStrengths                       String? // نقاط القوة الرئيسية
+  adminImprovements                    String? // مجالات التحسين
+  adminActionPlan                      String? // خطة العمل الموصى بها
+
+  adminName                            String?
+  adminEvaluationDate                  DateTime?
+  adminSignature                       String?
+  adminSignatureDate                   DateTime?
+
+  teacherConfirmSignature              String?   // تأكيد المعلم
+  teacherConfirmDate                   DateTime?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  teacher      User      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId])
+  @@index([weekStart])
+  @@index([weekEnd])
+  @@index([submittedAt])
+  @@index([evaluatedAt])
 }
