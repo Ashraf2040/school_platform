@@ -460,8 +460,10 @@ export default function TeacherWeeklyAchievement() {
                         {...register("lessonPlanDocument")}
                         className="w-full text-sm file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-teal-50 file:text-teal-700 file:font-medium hover:file:bg-teal-100 border border-dashed border-slate-300 rounded-xl bg-slate-50/60 cursor-pointer"
                       />
-                      {errors.lessonPlanDocument && (
-                        <p className="text-red-600 text-xs mt-1">{errors.lessonPlanDocument.message}</p>
+                      {errors.lessonPlanDocument?.message && (
+  <p className="text-red-600 text-xs mt-1">
+    {String(errors.lessonPlanDocument.message)}
+  </p>
                       )}
                     </div>
 
