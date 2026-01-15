@@ -66,10 +66,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: blob.url });
 
-  } catch (error) {
-    console.error("UPLOAD ERROR:", error);
+  }  catch (error: any) {
+    console.error("UPLOAD ERROR DETAIL:", error);
     return NextResponse.json(
-      { error: "Upload failed" },
+      { error: error.message || "Upload failed" },
       { status: 500 }
     );
   }
