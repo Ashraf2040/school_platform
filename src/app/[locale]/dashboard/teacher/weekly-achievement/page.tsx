@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,58 +9,6 @@ import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-
-const formSchema = z.object({
-  date: z.string().min(1),
-  classId: z.string().min(1),
-  week: z.string().min(1),
-  weekFrom: z.string().min(1, "تاريخ بداية الأسبوع مطلوب"),
-  weekTo: z.string().min(1, { message: "يرجى اختيار تاريخ النهاية" }),
-  preparedLessonPlans: z.boolean(),
-  lessonPlanDocument: z.any().optional(),
-
-  usedVariedMethods: z.boolean(),
-  teachingMethods: z.array(z.string()),
-  gradesTaught: z.array(z.string()),
-  teachingMethodDescription: z.string().optional(),
-
-  studentsEngaged: z.boolean(),
-  studentWorkSample: z.any().optional(),
-
-  maintainedPositiveEnvironment: z.boolean(),
-  environmentCommentsType: z.array(z.string()),
-  teacherComment: z.string().optional(),
-
-  providedClearFeedback: z.boolean(),
-  feedbackQuality: z.array(z.string()),
-  studentsNeedingHelp: z.string().optional(),
-
-  platformLevel: z.enum(["IXL", "Apex Learning"]).optional(),
-  usedDigitalPlatform: z.boolean(),
-  gradesBookScreenshot: z.any().optional(),
-
-  monitoredAssignments: z.boolean(),
-  assignmentsScreenshot: z.any().optional(),
-
-  aiTutorComment: z.string().optional(),
-  readingProgressComment: z.string().optional(),
-  exactPathComment: z.string().optional(),
-
-  atRiskStudentsReasons: z.array(z.string()),
-  atRiskStudentsNames: z.string().optional(),
-
-  highPerformingStudentsReasons: z.array(z.string()),
-  highPerformingStudentsNames: z.string().optional(),
-
-  issues: z.array(z.string()),
-  mainChallenge: z.string().optional(),
-  supportNeeded: z.string().optional(),
-
-  teacherSignature: z.string().min(1),
-  signatureDate: z.string().min(1),
-});
-
-type FormData = z.infer<typeof formSchema>;
 
 interface Class {
   id: string;
@@ -70,6 +18,73 @@ interface Class {
 export default function TeacherWeeklyAchievement() {
   const t = useTranslations("WeeklyAchievement");
   const router = useRouter();
+
+  // 1. Define Schema INSIDE component to access 't' for localization
+  const formSchema = useMemo(() => {
+    return z
+      .object({
+        date: z.string().min(1, t("errors.dateRequired") || "Date is required"),
+        classId: z.string().min(1, t("errors.classRequired") || "Class is required"),
+        week: z.string().min(1, t("errors.weekRequired") || "Week is required"),
+        weekFrom: z.string().min(1, t("errors.weekFromRequired") || "Start date is required"),
+        weekTo: z.string().min(1, { message: t("errors.weekToRequired") || "End date is required" }),
+        
+        preparedLessonPlans: z.boolean(),
+        lessonPlanDocument: z.any().optional(),
+
+        usedVariedMethods: z.boolean(),
+        teachingMethods: z.array(z.string()),
+        gradesTaught: z.array(z.string()),
+        teachingMethodDescription: z.string().optional(),
+
+        studentsEngaged: z.boolean(),
+        studentWorkSample: z.any().optional(),
+
+        maintainedPositiveEnvironment: z.boolean(),
+        environmentCommentsType: z.array(z.string()),
+        teacherComment: z.string().optional(),
+
+        providedClearFeedback: z.boolean(),
+        feedbackQuality: z.array(z.string()),
+        studentsNeedingHelp: z.string().optional(),
+
+        platformLevel: z.enum(["IXL", "Apex Learning"]).optional(),
+        usedDigitalPlatform: z.boolean(),
+        gradesBookScreenshot: z.any().optional(),
+
+        monitoredAssignments: z.boolean(),
+        assignmentsScreenshot: z.any().optional(),
+
+        aiTutorComment: z.string().optional(),
+        readingProgressComment: z.string().optional(),
+        exactPathComment: z.string().optional(),
+
+        atRiskStudentsReasons: z.array(z.string()),
+        atRiskStudentsNames: z.string().optional(),
+
+        highPerformingStudentsReasons: z.array(z.string()),
+        highPerformingStudentsNames: z.string().optional(),
+
+        issues: z.array(z.string()),
+        mainChallenge: z.string().optional(),
+        supportNeeded: z.string().optional(),
+
+        teacherSignature: z.string().min(1, t("errors.signatureRequired") || "Signature is required"),
+        signatureDate: z.string().min(1, t("errors.signatureDateRequired") || "Date is required"),
+      })
+      .refine((data) => new Date(data.weekTo) >= new Date(data.weekFrom), {
+        // 2. Localized message with fallback
+        message: t("errors.weekToInvalid") || "End date must be after or equal to start date",
+        path: ["weekTo"],
+      })
+      // Example: If 'usedVariedMethods' is true, require at least one method in 'teachingMethods'
+      .refine((data) => !data.usedVariedMethods || (data.teachingMethods && data.teachingMethods.length > 0), {
+        message: t("errors.selectMethods") || "Please select at least one teaching method",
+        path: ["teachingMethods"],
+      });
+  }, [t]);
+
+  type FormData = z.infer<typeof formSchema>;
 
   const { data: session, status } = useSession();
   const [teacherName, setTeacherName] = useState<string>("");
@@ -155,20 +170,78 @@ export default function TeacherWeeklyAchievement() {
     };
 
   const onSubmit = async (data: FormData) => {
-    const formData = new FormData();
+    // ============================
+    // 1. File Upload Logic (Same technique as Inquest)
+    // ============================
+   const uploadFile = async (file: any): Promise<string | null> => {
+  // لو مفيش ملف
+  if (!file) return null;
+
+  // 👈 الحل هنا
+  const realFile = file instanceof FileList ? file[0] : file;
+
+  if (!realFile || typeof realFile === "string") return null;
+
+  console.log("📤 Uploading file:", realFile.name, realFile.type, realFile.size);
+
+  const formData = new FormData();
+  formData.append("file", realFile);
+
+  const uploadRes = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!uploadRes.ok) {
+    const err = await uploadRes.json();
+    throw new Error(err.error || "Upload failed");
+  }
+
+  const uploadData = await uploadRes.json();
+  return uploadData.url;
+};
+
+
+    try {
+      // Upload all potential files in parallel
+      const [lessonUrl, workUrl, gradesUrl, assignUrl] = await Promise.all([
+        uploadFile(data.lessonPlanDocument),
+        uploadFile(data.studentWorkSample),
+        uploadFile(data.gradesBookScreenshot),
+        uploadFile(data.assignmentsScreenshot)
+      ]);
+
+      // Replace file objects with URLs in the data object
+      if (lessonUrl) data.lessonPlanDocument = lessonUrl as any;
+      if (workUrl) data.studentWorkSample = workUrl as any;
+      if (gradesUrl) data.gradesBookScreenshot = gradesUrl as any;
+      if (assignUrl) data.assignmentsScreenshot = assignUrl as any;
+
+    } catch (err: any) {
+      console.error("❌ Upload error:", err);
+      toast.error(err.message || "File upload failed");
+      return;
+    }
+
+    // ============================
+    // 2. Submit Final Data
+    // ============================
+    const finalFormData = new FormData();
 
     Object.entries(data).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        value.forEach((v) => formData.append(key, v as string));
+        value.forEach((v) => finalFormData.append(key, v as string));
       } else if (value !== undefined && value !== null) {
-        formData.append(key, value as any);
+        // At this point, 'value' is either a string, number, boolean, or URL string.
+        // We don't need to pass the original File object anymore.
+        finalFormData.append(key, value as any);
       }
     });
 
     try {
       const res = await fetch("/api/teacher-reports", {
         method: "POST",
-        body: formData,
+        body: finalFormData,
       });
 
       if (!res.ok) {
@@ -286,7 +359,7 @@ export default function TeacherWeeklyAchievement() {
                       </select>
                       {errors.classId && (
                         <p className="text-red-600 text-xs mt-1">
-                          {t("classRequired")}
+                          {errors.classId.message}
                         </p>
                       )}
                     </div>
@@ -309,7 +382,7 @@ export default function TeacherWeeklyAchievement() {
                       </select>
                       {errors.week && (
                         <p className="text-red-600 text-xs mt-1">
-                          {t("weekRequired")}
+                          {errors.week.message}
                         </p>
                       )}
                     </div>
@@ -342,6 +415,7 @@ export default function TeacherWeeklyAchievement() {
                         {...register("weekTo")}
                         className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50/60 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
                       />
+                      {/* 3. Added error display for weekTo which was missing explicit refinement display before */}
                       {errors.weekTo && (
                         <p className="text-red-600 text-xs mt-1">
                           {errors.weekTo.message}
@@ -363,14 +437,19 @@ export default function TeacherWeeklyAchievement() {
                   </h2>
 
                   <div className="space-y-6">
-                    <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
-                      <input
-                        type="checkbox"
-                        {...register("preparedLessonPlans")}
-                        className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
-                      />
-                      <span>{t("preparedLessonPlans")}</span>
-                    </label>
+                    <div>
+                      <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
+                        <input
+                          type="checkbox"
+                          {...register("preparedLessonPlans")}
+                          className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                        />
+                        <span>{t("preparedLessonPlans")}</span>
+                      </label>
+                      {errors.preparedLessonPlans && (
+                        <p className="text-red-600 text-xs mt-1">{errors.preparedLessonPlans.message}</p>
+                      )}
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -381,16 +460,24 @@ export default function TeacherWeeklyAchievement() {
                         {...register("lessonPlanDocument")}
                         className="w-full text-sm file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-teal-50 file:text-teal-700 file:font-medium hover:file:bg-teal-100 border border-dashed border-slate-300 rounded-xl bg-slate-50/60 cursor-pointer"
                       />
+                      {errors.lessonPlanDocument && (
+                        <p className="text-red-600 text-xs mt-1">{errors.lessonPlanDocument.message}</p>
+                      )}
                     </div>
 
-                    <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
-                      <input
-                        type="checkbox"
-                        {...register("usedVariedMethods")}
-                        className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
-                      />
-                      <span>{t("usedVariedMethods")}</span>
-                    </label>
+                    <div>
+                      <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
+                        <input
+                          type="checkbox"
+                          {...register("usedVariedMethods")}
+                          className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                        />
+                        <span>{t("usedVariedMethods")}</span>
+                      </label>
+                      {errors.usedVariedMethods && (
+                        <p className="text-red-600 text-xs mt-1">{errors.usedVariedMethods.message}</p>
+                      )}
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-3">
@@ -417,6 +504,12 @@ export default function TeacherWeeklyAchievement() {
                           </label>
                         ))}
                       </div>
+                      {/* Error display for array fields */}
+                      {errors.teachingMethods && (
+                        <p className="text-red-600 text-xs mt-1">
+                          {errors.teachingMethods.message}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -428,16 +521,24 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.teachingMethodDescription && (
+                        <p className="text-red-600 text-xs mt-1">{errors.teachingMethodDescription.message}</p>
+                      )}
                     </div>
 
-                    <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
-                      <input
-                        type="checkbox"
-                        {...register("studentsEngaged")}
-                        className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
-                      />
-                      <span>{t("studentsEngaged")}</span>
-                    </label>
+                    <div>
+                      <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
+                        <input
+                          type="checkbox"
+                          {...register("studentsEngaged")}
+                          className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                        />
+                        <span>{t("studentsEngaged")}</span>
+                      </label>
+                      {errors.studentsEngaged && (
+                        <p className="text-red-600 text-xs mt-1">{errors.studentsEngaged.message}</p>
+                      )}
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -450,14 +551,19 @@ export default function TeacherWeeklyAchievement() {
                       />
                     </div>
 
-                    <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
-                      <input
-                        type="checkbox"
-                        {...register("maintainedPositiveEnvironment")}
-                        className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
-                      />
-                      <span>{t("positiveEnvironment")}</span>
-                    </label>
+                    <div>
+                      <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
+                        <input
+                          type="checkbox"
+                          {...register("maintainedPositiveEnvironment")}
+                          className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                        />
+                        <span>{t("positiveEnvironment")}</span>
+                      </label>
+                      {errors.maintainedPositiveEnvironment && (
+                        <p className="text-red-600 text-xs mt-1">{errors.maintainedPositiveEnvironment.message}</p>
+                      )}
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-3">
@@ -484,6 +590,9 @@ export default function TeacherWeeklyAchievement() {
                           </label>
                         ))}
                       </div>
+                      {errors.environmentCommentsType && (
+                        <p className="text-red-600 text-xs mt-1">{errors.environmentCommentsType.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -495,16 +604,24 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.teacherComment && (
+                        <p className="text-red-600 text-xs mt-1">{errors.teacherComment.message}</p>
+                      )}
                     </div>
 
-                    <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
-                      <input
-                        type="checkbox"
-                        {...register("providedClearFeedback")}
-                        className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
-                      />
-                      <span>{t("clearFeedback")}</span>
-                    </label>
+                    <div>
+                      <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
+                        <input
+                          type="checkbox"
+                          {...register("providedClearFeedback")}
+                          className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                        />
+                        <span>{t("clearFeedback")}</span>
+                      </label>
+                      {errors.providedClearFeedback && (
+                        <p className="text-red-600 text-xs mt-1">{errors.providedClearFeedback.message}</p>
+                      )}
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-3">
@@ -531,6 +648,9 @@ export default function TeacherWeeklyAchievement() {
                           </label>
                         ))}
                       </div>
+                      {errors.feedbackQuality && (
+                        <p className="text-red-600 text-xs mt-1">{errors.feedbackQuality.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -542,6 +662,9 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.studentsNeedingHelp && (
+                        <p className="text-red-600 text-xs mt-1">{errors.studentsNeedingHelp.message}</p>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -568,7 +691,7 @@ export default function TeacherWeeklyAchievement() {
                             type="radio"
                             value="IXL"
                             {...register("platformLevel")}
-                            className="w-5 h-5 text-teal-600 border-slate-300 focus:ring-teal-500"
+                            className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
                           />
                           <span>{t("ixl")}</span>
                         </label>
@@ -577,21 +700,29 @@ export default function TeacherWeeklyAchievement() {
                             type="radio"
                             value="Apex Learning"
                             {...register("platformLevel")}
-                            className="w-5 h-5 text-teal-600 border-slate-300 focus:ring-teal-500"
+                            className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
                           />
                           <span>{t("apex")}</span>
                         </label>
                       </div>
+                      {errors.platformLevel && (
+                        <p className="text-red-600 text-xs mt-1">{errors.platformLevel.message}</p>
+                      )}
                     </div>
 
-                    <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
-                      <input
-                        type="checkbox"
-                        {...register("usedDigitalPlatform")}
-                        className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
-                      />
-                      <span>{t("usedPlatform")}</span>
-                    </label>
+                    <div>
+                      <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
+                        <input
+                          type="checkbox"
+                          {...register("usedDigitalPlatform")}
+                          className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                        />
+                        <span>{t("usedPlatform")}</span>
+                      </label>
+                      {errors.usedDigitalPlatform && (
+                        <p className="text-red-600 text-xs mt-1">{errors.usedDigitalPlatform.message}</p>
+                      )}
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -604,14 +735,19 @@ export default function TeacherWeeklyAchievement() {
                       />
                     </div>
 
-                    <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
-                      <input
-                        type="checkbox"
-                        {...register("monitoredAssignments")}
-                        className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
-                      />
-                      <span>{t("monitoredAssignments")}</span>
-                    </label>
+                    <div>
+                      <label className="flex items-center gap-3 text-base px-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-300 transition cursor-pointer">
+                        <input
+                          type="checkbox"
+                          {...register("monitoredAssignments")}
+                          className="w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                        />
+                        <span>{t("monitoredAssignments")}</span>
+                      </label>
+                      {errors.monitoredAssignments && (
+                        <p className="text-red-600 text-xs mt-1">{errors.monitoredAssignments.message}</p>
+                      )}
+                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -633,6 +769,9 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.aiTutorComment && (
+                        <p className="text-red-600 text-xs mt-1">{errors.aiTutorComment.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -644,6 +783,9 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.readingProgressComment && (
+                        <p className="text-red-600 text-xs mt-1">{errors.readingProgressComment.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -655,6 +797,9 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.exactPathComment && (
+                        <p className="text-red-600 text-xs mt-1">{errors.exactPathComment.message}</p>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -696,6 +841,9 @@ export default function TeacherWeeklyAchievement() {
                           </label>
                         ))}
                       </div>
+                      {errors.atRiskStudentsReasons && (
+                        <p className="text-red-600 text-xs mt-1">{errors.atRiskStudentsReasons.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -707,6 +855,9 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.atRiskStudentsNames && (
+                        <p className="text-red-600 text-xs mt-1">{errors.atRiskStudentsNames.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -734,6 +885,9 @@ export default function TeacherWeeklyAchievement() {
                           </label>
                         ))}
                       </div>
+                      {errors.highPerformingStudentsReasons && (
+                        <p className="text-red-600 text-xs mt-1">{errors.highPerformingStudentsReasons.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -745,6 +899,9 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.highPerformingStudentsNames && (
+                        <p className="text-red-600 text-xs mt-1">{errors.highPerformingStudentsNames.message}</p>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -781,6 +938,9 @@ export default function TeacherWeeklyAchievement() {
                           </label>
                         ))}
                       </div>
+                      {errors.issues && (
+                        <p className="text-red-600 text-xs mt-1">{errors.issues.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -792,6 +952,9 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.mainChallenge && (
+                        <p className="text-red-600 text-xs mt-1">{errors.mainChallenge.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -803,6 +966,9 @@ export default function TeacherWeeklyAchievement() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition resize-none"
                         rows={3}
                       />
+                      {errors.supportNeeded && (
+                        <p className="text-red-600 text-xs mt-1">{errors.supportNeeded.message}</p>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -830,7 +996,7 @@ export default function TeacherWeeklyAchievement() {
                       />
                       {errors.teacherSignature && (
                         <p className="text-red-600 text-xs mt-1">
-                          {t("signatureRequired")}
+                          {errors.teacherSignature.message}
                         </p>
                       )}
                     </div>
@@ -846,7 +1012,7 @@ export default function TeacherWeeklyAchievement() {
                       />
                       {errors.signatureDate && (
                         <p className="text-red-600 text-xs mt-1">
-                          {t("signatureDateRequired")}
+                          {errors.signatureDate.message}
                         </p>
                       )}
                     </div>

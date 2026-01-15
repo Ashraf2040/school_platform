@@ -1,4 +1,4 @@
-// New /api/upload/route.ts (for PDF upload)
+// src/app/api/upload/route.ts
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
@@ -6,18 +6,48 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: Request) {
   const formData = await req.formData();
-  const file = formData.get("file") as File | null;
+  const file = formData.get("file"); 
 
-  if (!file || file.type !== "application/pdf") {
-    return NextResponse.json({ error: "Invalid file" }, { status: 400 });
+  // 1. FIX: Check if file exists and is an object
+  // We use 'object' because Next.js File objects are not instanceof global File
+  if (!file || typeof file !== 'object') {
+    return NextResponse.json({ error: "No valid file provided" }, { status: 400 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const filename = `${uuidv4()}${path.extname(file.name)}`;
-  const uploadDir = path.join(process.cwd(), "public/uploads");
-  await fs.mkdir(uploadDir, { recursive: true });
-  await fs.writeFile(path.join(uploadDir, filename), buffer);
+  // 2. Explicitly check properties to ensure it is a file-like object
+  const fileObj = file as any;
+  if (!fileObj.name || fileObj.size === undefined) {
+     return NextResponse.json({ error: "Invalid file structure" }, { status: 400 });
+  }
 
-  const url = `/uploads/${filename}`;
-  return NextResponse.json({ url });
+  // 3. Validation: Allow PDF OR Images
+  const isPdf = fileObj.type === "application/pdf";
+  const isImage = fileObj.type?.startsWith("image/");
+
+  if (!isPdf && !isImage) {
+    return NextResponse.json(
+      { 
+        error: `Invalid file type (${fileObj.type}). Only PDF and Images are allowed.` 
+      }, 
+      { status: 400 }
+    );
+  }
+
+  try {
+    const buffer = Buffer.from(await fileObj.arrayBuffer());
+    const filename = `${uuidv4()}${path.extname(fileObj.name)}`;
+    const uploadDir = path.join(process.cwd(), "public/uploads");
+    
+    // Create directory if it doesn't exist
+    await fs.mkdir(uploadDir, { recursive: true });
+    
+    // Write file
+    await fs.writeFile(path.join(uploadDir, filename), buffer);
+
+    const url = `/uploads/${filename}`;
+    return NextResponse.json({ url });
+  } catch (error) {
+    console.error("Upload error:", error);
+    return NextResponse.json({ error: "Failed to save file" }, { status: 500 });
+  }
 }

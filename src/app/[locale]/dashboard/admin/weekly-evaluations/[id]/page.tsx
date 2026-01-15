@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -90,7 +91,7 @@ export default function WeeklyEvaluationView() {
   const printRef = useRef<HTMLDivElement>(null);
 
   const [adminForm, setAdminForm] = useState({
-    adminName: "",
+    adminName: "Ahmed Soliman", // 1. Fixed Administrator Name
     evaluationDate: new Date().toISOString().split("T")[0],
     classroomScores: {
       lessonPlanning: 0,
@@ -110,13 +111,13 @@ export default function WeeklyEvaluationView() {
     },
     issuesManagement: 0,
     evaluationLevel: "excellent" as "excellent" | "good" | "satisfactory" | "needsImprovement",
-    teacherLevel: 4 as 1 | 2 | 3 | 4, // Default to lowest
-    strengths: "",
-    improvements: "",
+    teacherLevel: 4 as 1 | 2 | 3 | 4, 
+    strengths: "", // Kept for compatibility but hidden in UI
+    improvements: "", // Kept for compatibility but hidden in UI
     actionPlan: "",
-    adminSignature: "",
+    adminSignature: "Ahmed Soliman", // Fixed Admin Signature
     adminSignatureDate: new Date().toISOString().split("T")[0],
-    teacherConfirmSignature: "",
+    teacherConfirmSignature: "", // Will be auto-filled
     teacherConfirmDate: new Date().toISOString().split("T")[0],
   });
 
@@ -128,9 +129,23 @@ export default function WeeklyEvaluationView() {
         if (!res.ok) throw new Error(t("errors.fetchFailed"));
         const data = await res.json();
         setReport(data);
+        
+        // Initialize admin data from server if exists, otherwise keep defaults
         if (data.adminData) {
-          setAdminForm(data.adminData);
+          setAdminForm(prev => ({
+            ...prev, 
+            ...data.adminData,
+            // Ensure specific fields remain fixed if necessary or update them
+            adminName: "Ahmed Soliman", 
+            adminSignature: "Ahmed Soliman"
+          }));
         }
+        
+        // Auto-fill Teacher Confirmation Signature if report data is available
+        if (data.teacher?.name) {
+           setAdminForm(prev => ({ ...prev, teacherConfirmSignature: data.teacher.name }));
+        }
+
       } catch {
         setError(t("errors.loadError"));
       } finally {
@@ -140,30 +155,74 @@ export default function WeeklyEvaluationView() {
 
     fetchReport();
   }, [params.id, t]);
+
 const locale = useLocale();
 const isArabic = locale === "ar";
 
-  // Logic to Auto-Calculate Teacher Level (1, 2, 3, 4) based on Score
+  // Logic to Auto-Calculate Teacher Level, Evaluation Level, and Action Plan
   useEffect(() => {
     const totalScore = calculateTotalScore();
     let newLevel: 1 | 2 | 3 | 4 = 4;
+    let newEvalLevel: "excellent" | "good" | "satisfactory" | "needsImprovement" = "needsImprovement";
 
     if (totalScore >= 90) {
-      newLevel = 1; // Excellent
+      newLevel = 1; 
+      newEvalLevel = "excellent";
     } else if (totalScore >= 80) {
-      newLevel = 2; // Good
+      newLevel = 2; 
+      newEvalLevel = "good";
     } else if (totalScore >= 70) {
-      newLevel = 3; // Satisfactory
+      newLevel = 3; 
+      newEvalLevel = "satisfactory";
     } else {
-      newLevel = 4; // Needs Improvement
+      newLevel = 4; 
+      newEvalLevel = "needsImprovement";
     }
-    
-    setAdminForm(prev => ({ ...prev, teacherLevel: newLevel }));
+
+    // Logic to find the weakest section for Action Plan
+    // Calculate percentages to find the true weakest link
+    const classroomTotal = Object.values(adminForm.classroomScores).reduce((a, b) => a + b, 0); // Max 60
+    const digitalTotal = Object.values(adminForm.digitalScores).reduce((a, b) => a + b, 0); // Max 20
+    const monitoringTotal = Object.values(adminForm.monitoringScores).reduce((a, b) => a + b, 0); // Max 16
+    const issuesTotal = adminForm.issuesManagement; // Max 4
+
+    const ratios = {
+      [t("sections.classPerformance")]: classroomTotal / 60,
+      [t("sections.digitalPlatform")]: digitalTotal / 20,
+      [t("sections.studentMonitoring")]: monitoringTotal / 16,
+      [t("sections.issuesManagement")]: issuesTotal / 4
+    };
+
+    // Find key with minimum value
+    const weakestSectionLabel = Object.keys(ratios).reduce((a, b) => ratios[a] < ratios[b] ? a : b);
+    const autoActionPlan = `You have to focus on ${weakestSectionLabel}`;
+
+    setAdminForm(prev => {
+      const updated = { 
+        ...prev, 
+        teacherLevel: newLevel, 
+        evaluationLevel: newEvalLevel
+      };
+
+      // 2. Logic: Action Plan only if level is not Excellent (1)
+      if (newLevel !== 1) {
+        // Only auto-fill if the user hasn't manually typed something distinct, or just force it as per requirement
+        // For this implementation, we will force it to match the prompt "fill text area by something like..."
+        updated.actionPlan = autoActionPlan;
+      } else {
+        // If excellent, we can clear the action plan or leave it hidden. 
+        // The logic below hides the UI, so clearing here is good practice.
+        updated.actionPlan = "";
+      }
+      
+      return updated;
+    });
   }, [
     adminForm.classroomScores, 
     adminForm.digitalScores, 
     adminForm.monitoringScores, 
-    adminForm.issuesManagement
+    adminForm.issuesManagement,
+    t
   ]);
 
   const calculateTotalScore = () => {
@@ -451,21 +510,7 @@ const handlePrint = () => {
       </div>
     </div>
 
-    <!-- Comments -->
-    ${admin.strengths ? `
-      <div class="comment">
-        <strong>${t("print.strengths")}:</strong>
-        ${admin.strengths.replace(/\n/g, " • ")}
-      </div>
-    ` : ""}
-
-    ${admin.improvements ? `
-      <div class="comment">
-        <strong>${t("print.improvements")}:</strong>
-        ${admin.improvements.replace(/\n/g, " • ")}
-      </div>
-    ` : ""}
-
+    <!-- Comments (Only Action Plan shown in print) -->
     ${admin.actionPlan ? `
       <div class="comment">
         <strong>${t("print.actionPlan")}:</strong>
@@ -993,25 +1038,13 @@ const handlePrint = () => {
 
                     <div className="bg-gray-50 p-3 rounded border border-gray-200">
                       <div className="flex justify-between">
-                        <span className="font-semibold text-gray-800 text-sm">{t("labels.issuesManagement")}</span>
+                        <span className="font-semibold text-gray-800 text-sm">{t("sections.issuesManagement")}</span>
                         <span className="font-medium text-sm">{adminData.issuesManagement}/4</span>
                       </div>
                     </div>
                   </div>
 
-                  {adminData.strengths && (
-                    <div className="mb-4 p-3 bg-emerald-50 rounded border border-emerald-200">
-                      <p className="text-xs font-semibold text-emerald-900 mb-1">{t("labels.strengths")}</p>
-                      <p className="text-xs text-emerald-800">{adminData.strengths}</p>
-                    </div>
-                  )}
-
-                  {adminData.improvements && (
-                    <div className="mb-4 p-3 bg-amber-50 rounded border border-amber-200">
-                      <p className="text-xs font-semibold text-amber-900 mb-1">{t("labels.improvements")}</p>
-                      <p className="text-xs text-amber-800">{adminData.improvements}</p>
-                    </div>
-                  )}
+                  {/* Removed Strengths and Improvements sections as requested */}
 
                   {adminData.actionPlan && (
                     <div className="p-3 bg-blue-50 rounded border border-blue-200">
@@ -1051,8 +1084,8 @@ const handlePrint = () => {
                         <input
                           type="text"
                           value={adminForm.adminName}
-                          onChange={(e) => setAdminForm({ ...adminForm, adminName: e.target.value })}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                          readOnly
+                          className="w-full bg-gray-100 border border-gray-300 rounded-md px-3 py-2 text-sm cursor-not-allowed"
                           required
                         />
                       </div>
@@ -1122,7 +1155,7 @@ const handlePrint = () => {
                         <ScoreInput
                           label={t("labels.assignmentMonitoring")}
                           value={adminForm.digitalScores.assignmentMonitoring}
-                          max={4} // Changed from 9 to 4 to help sum to 100
+                          max={4}
                           onChange={(v) => handleScoreChange("digitalScores", "assignmentMonitoring", v)}
                         />
                       </div>
@@ -1151,7 +1184,7 @@ const handlePrint = () => {
                       <ScoreInput
                         label={t("labels.identification")}
                         value={adminForm.issuesManagement}
-                        max={4} // Changed from 5 to 4
+                        max={4}
                         onChange={(v) => setAdminForm({ ...adminForm, issuesManagement: v })}
                       />
                     </div>
@@ -1162,43 +1195,44 @@ const handlePrint = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">{t("labels.evaluationLevel")}</label>
+                      {/* Auto-Selected based on calculation, Disabled to prevent override */}
                       <div className="space-y-2">
-                        <label className="flex items-center text-sm">
+                        <label className={`flex items-center text-sm px-2 py-1 rounded ${adminForm.evaluationLevel === "excellent" ? "bg-blue-50" : ""}`}>
                           <input
                             type="radio"
                             value="excellent"
                             checked={adminForm.evaluationLevel === "excellent"}
-                            onChange={() => setAdminForm({ ...adminForm, evaluationLevel: "excellent" })}
+                            disabled
                             className="mr-2"
                           />
                           {t("levels.excellent")}
                         </label>
-                        <label className="flex items-center text-sm">
+                        <label className={`flex items-center text-sm px-2 py-1 rounded ${adminForm.evaluationLevel === "good" ? "bg-blue-50" : ""}`}>
                           <input
                             type="radio"
                             value="good"
                             checked={adminForm.evaluationLevel === "good"}
-                            onChange={() => setAdminForm({ ...adminForm, evaluationLevel: "good" })}
+                            disabled
                             className="mr-2"
                           />
                           {t("levels.good")}
                         </label>
-                        <label className="flex items-center text-sm">
+                        <label className={`flex items-center text-sm px-2 py-1 rounded ${adminForm.evaluationLevel === "satisfactory" ? "bg-blue-50" : ""}`}>
                           <input
                             type="radio"
                             value="satisfactory"
                             checked={adminForm.evaluationLevel === "satisfactory"}
-                            onChange={() => setAdminForm({ ...adminForm, evaluationLevel: "satisfactory" })}
+                            disabled
                             className="mr-2"
                           />
                           {t("levels.satisfactory")}
                         </label>
-                        <label className="flex items-center text-sm">
+                        <label className={`flex items-center text-sm px-2 py-1 rounded ${adminForm.evaluationLevel === "needsImprovement" ? "bg-blue-50" : ""}`}>
                           <input
                             type="radio"
                             value="needsImprovement"
                             checked={adminForm.evaluationLevel === "needsImprovement"}
-                            onChange={() => setAdminForm({ ...adminForm, evaluationLevel: "needsImprovement" })}
+                            disabled
                             className="mr-2"
                           />
                           {t("levels.needsImprovement")}
@@ -1220,42 +1254,30 @@ const handlePrint = () => {
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t("labels.strengths")}</label>
-                      <textarea
-                        value={adminForm.strengths}
-                        onChange={(e) => setAdminForm({ ...adminForm, strengths: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm h-24"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t("labels.improvements")}</label>
-                      <textarea
-                        value={adminForm.improvements}
-                        onChange={(e) => setAdminForm({ ...adminForm, improvements: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm h-24"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t("labels.actionPlan")}</label>
-                      <textarea
-                        value={adminForm.actionPlan}
-                        onChange={(e) => setAdminForm({ ...adminForm, actionPlan: e.target.value })}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm h-24"
-                        required
-                      />
-                    </div>
+                    {/* Removed Strengths and Improvements textareas */}
+
+                    {/* Action Plan: Only show if not Excellent */}
+                    {adminForm.teacherLevel !== 1 && (
+                        <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t("labels.actionPlan")}</label>
+                        <textarea
+                          value={adminForm.actionPlan}
+                          onChange={(e) => setAdminForm({ ...adminForm, actionPlan: e.target.value })}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm h-24"
+                          required
+                        />
+                      </div>
+                    )}
 
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">{t("fields.adminSignature")}</label>
+                        {/* Fixed Admin Signature */}
                         <input
                           type="text"
                           value={adminForm.adminSignature}
-                          onChange={(e) => setAdminForm({ ...adminForm, adminSignature: e.target.value })}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                          readOnly
+                          className="w-full bg-gray-100 border border-gray-300 rounded-md px-3 py-2 text-sm cursor-not-allowed"
                           required
                         />
                       </div>
@@ -1273,11 +1295,12 @@ const handlePrint = () => {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">{t("fields.teacherConfirmSignature")}</label>
+                        {/* Auto-filled Teacher Confirmation Signature */}
                         <input
                           type="text"
                           value={adminForm.teacherConfirmSignature}
-                          onChange={(e) => setAdminForm({ ...adminForm, teacherConfirmSignature: e.target.value })}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                          readOnly
+                          className="w-full bg-gray-100 border border-gray-300 rounded-md px-3 py-2 text-sm cursor-not-allowed"
                         />
                       </div>
                       <div>
