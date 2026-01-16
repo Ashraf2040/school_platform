@@ -5,10 +5,11 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const from = searchParams.get("from");
-    const to = searchParams.get("to");
-
-    // Fetch all teachers with their latest report
+    // Note: We no longer strictly need 'from' and 'to' on the server
+    // because we will fetch all reports and filter on the client.
+    // This allows instant switching between date ranges without reloading.
+    
+    // Fetch all teachers with ALL their weekly reports
     const teachers = await prisma.user.findMany({
       where: { role: "TEACHER" },
       select: {
@@ -26,34 +27,18 @@ export async function GET(req: Request) {
         },
         weeklyReports: {
           orderBy: { weekStart: "desc" },
-          take: 1,
+          // REMOVED take: 1 to get all reports
           select: {
             id: true,
             weekStart: true,
-            weekEnd: true, // ← Added weekEnd
+            weekEnd: true,
           },
         },
       },
     });
 
-    // Filter based on latest report's weekStart if from/to params are provided
-    let filteredTeachers = teachers;
-    if (from || to) {
-      const fromDate = from ? new Date(from) : null;
-      const toDate = to ? new Date(to) : null;
-
-      filteredTeachers = teachers.filter((t) => {
-        if (!t.weeklyReports.length) return false;
-        const latestStart = t.weeklyReports[0].weekStart;
-
-        if (fromDate && latestStart < fromDate) return false;
-        if (toDate && latestStart > toDate) return false;
-        return true;
-      });
-    }
-
     // Map the result with ISO strings
-    const result = filteredTeachers.map((t) => ({
+    const result = teachers.map((t) => ({
       id: t.id,
       name: t.name,
       classesTaught: t.classesTaught,
@@ -61,7 +46,7 @@ export async function GET(req: Request) {
       weeklyReports: t.weeklyReports.map((r) => ({
         id: r.id,
         weekStart: r.weekStart.toISOString(),
-        weekEnd: r.weekEnd ? r.weekEnd.toISOString() : null, // ← Include weekEnd
+        weekEnd: r.weekEnd ? r.weekEnd.toISOString() : null,
       })),
     }));
 

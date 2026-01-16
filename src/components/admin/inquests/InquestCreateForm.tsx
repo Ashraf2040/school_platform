@@ -1,8 +1,10 @@
 
+
+
 "use client";
 
 import { useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { AcademicYear, Teacher } from "./types";
 
 export type FormState = {
@@ -44,17 +46,25 @@ export function InquestCreateForm({
   onCancel,
 }: Props) {
   const t = useTranslations("InquestCreateForm");
-
+console.log(filterTeacherId)
+const locale = useLocale();
   /* ---------------- Auto-fill teacher profile ---------------- */
   useEffect(() => {
     if (filterTeacherId) {
       const teacher = teachers.find((t) => t.id === filterTeacherId);
-      if (teacher?.teacherProfile) {
+      console.log(teacher)
+      if (teacher) {
         setForm((prev) => ({
           ...prev,
-          teacherJobTitle: teacher.teacherProfile?.jobTitle || "",
-          teacherSpecialty: teacher.teacherProfile?.specialty || "",
-          teacherSchool: teacher.teacherProfile?.schoolName || "",
+          // 1. Job Title comes from teacher.role
+      
+          
+          // 2. Specialty comes from teacher.subject
+          // Ensure your Teacher type definition includes the 'subject' property
+          teacherSpecialty: teacher.specialty || "", 
+          
+          // 3. School is fixed
+          teacherSchool: "Alforqan American Division",
         }));
       }
     }
@@ -218,14 +228,12 @@ export function InquestCreateForm({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                {t("jobTitle")}
+                {` ${locale === "en" ? "Teacher" : " معلم"}`}
               </label>
               <input
                 type="text"
-                value={form.teacherJobTitle}
-                onChange={(e) =>
-                  setForm({ ...form, teacherJobTitle: e.target.value })
-                }
+                value={` ${locale === "en" ? "Teacher" : " معلم"}`}
+            
                 className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
               />
             </div>

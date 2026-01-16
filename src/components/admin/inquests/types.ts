@@ -1,6 +1,7 @@
 // components/admin/inquests/types.ts
 
 export type Teacher = {
+  specialty: string;
   id: string;
   name: string;
   username: string;

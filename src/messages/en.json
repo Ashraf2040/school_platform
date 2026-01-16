@@ -683,7 +683,9 @@
     "noResults": "No teachers found",
     "tryAdjustFilters": "Try adjusting your search filters or date range",
     "noReport": "No report submitted",
-    "viewReport": "View Report"
+    "viewReport": "View Report",
+    "daysAgo": "{count} days ago",
+    "today":"Today"
   }
  
 
