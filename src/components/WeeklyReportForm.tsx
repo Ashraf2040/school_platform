@@ -156,7 +156,7 @@ export default function WeeklyReportForm({ reportId, onSuccess }: WeeklyReportFo
     }
   }
 
-  // UPDATED: Curried function to match the creation code style for easier integration
+  // UPDATED: Curried function to match creation code style for easier integration
   const handleCheckboxArray = (
     field:
       | "teachingMethods"
@@ -177,7 +177,7 @@ export default function WeeklyReportForm({ reportId, onSuccess }: WeeklyReportFo
     );
   };
 
-    const onSubmit = async (data: WeeklyReportInput) => {
+  const onSubmit = async (data: WeeklyReportInput) => {
     setLoading(true)
     const formData = new FormData()
     

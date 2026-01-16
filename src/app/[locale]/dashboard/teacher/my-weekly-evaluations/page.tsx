@@ -1,3 +1,5 @@
+
+
 'use client'
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
@@ -87,6 +89,13 @@ export default function TeacherReports() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
+  // ✅ NEW: Helper function to find class name by ID
+  const getClassName = (id: string | undefined) => {
+    if (!id) return 'N/A';
+    const foundClass = classes.find(c => c.id === id);
+    return foundClass ? foundClass.name : 'N/A';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -163,7 +172,8 @@ export default function TeacherReports() {
                       </div>
                     </td>
                     <td className="p-4">
-                      {(report.teacherData as any)?.classId || 'N/A'}
+                      {/* ✅ UPDATED: Use helper function to show Name instead of ID */}
+                      {getClassName((report.teacherData as any)?.classId)}
                     </td>
                     <td className="p-4 text-sm text-slate-600">
                       {formatDate(report.createdAt, 'full')}
@@ -173,7 +183,7 @@ export default function TeacherReports() {
                         onClick={() => router.push(`/dashboard/teacher/my-weekly-evaluations/${report.id}`)}
                         className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-1.5 rounded-xl text-sm font-medium transition"
                       >
-                        View & Edit
+                         Edit
                       </button>
                     </td>
                   </tr>

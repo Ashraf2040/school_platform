@@ -12,6 +12,18 @@ export default async function TeacherHome() {
   }
 
   const cards = [
+      {
+      name: "Daily Lessons Management",
+      href: "/dashboard/admin/daily-activities-teacher",
+      description: "Submit and view your weekly teaching reports.",
+      icon: "📊",
+    },
+     {
+      name: "Weekly Follow-up Reports",
+      href: "/dashboard/teacher/weekly-achievement",
+      description: "Submit and view your weekly teaching reports.",
+      icon: "📊",
+    },
     {
       name: "My Inquests",
       href: "/dashboard/teacher/inquests",
@@ -30,12 +42,8 @@ export default async function TeacherHome() {
       description: "View all school announcements.",
       icon: "📢",
     },
-    {
-      name: "Weekly Achievement",
-      href: "/dashboard/teacher/weekly-achievement",
-      description: "Submit and view your weekly teaching reports.",
-      icon: "📊",
-    },
+   
+  
   ];
 
   return (

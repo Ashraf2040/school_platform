@@ -70,7 +70,7 @@ export default function Sidebar({ role }: { role: string }) {
     <>
       <button
         onClick={toggleSidebar}
-        className={`fixed top-4 z-50 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 shadow-lg shadow-teal-500/40 text-white transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-teal-300 md:hidden ${
+        className={`fixed top-18 z-50 flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 shadow-lg shadow-teal-500/40 text-white transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-teal-300 md:hidden ${
           isRTL ? "left-4" : "right-4"
         }`}
         aria-label="Toggle Menu"

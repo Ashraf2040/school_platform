@@ -27,7 +27,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 relative overflow-hidden">
+    <div className="min-h-screen  text-slate-900 relative overflow-hidden">
       {/* Background - Green subtle grid */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <div className="absolute inset-0 bg-white" />

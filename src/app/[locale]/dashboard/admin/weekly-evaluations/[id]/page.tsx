@@ -1,11 +1,16 @@
 
 
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { useLocale } from "next-intl";
+import { normalizeToArray } from "@/lib/normalize";
+
+// 1. Import the helper function (Adjust the path based on your actual file structure, e.g., "@/lib/utils")
+// import { normalizeToArray } from "@/lib/utils"; 
 
 interface WeeklyReport {
   id: string;
@@ -65,7 +70,7 @@ interface WeeklyReport {
     };
     monitoringScores: {
       atRisk: number;
-      highPerforming: number;
+      highPerform: number;
     };
     issuesManagement: number;
     totalScore: number;
@@ -107,7 +112,7 @@ export default function WeeklyEvaluationView() {
     },
     monitoringScores: {
       atRisk: 0,
-      highPerforming: 0,
+      highPerform: 0,
     },
     issuesManagement: 0,
     evaluationLevel: "excellent" as "excellent" | "good" | "satisfactory" | "needsImprovement",
@@ -750,16 +755,18 @@ const handlePrint = () => {
                       answer={YesNo(teacherData.usedVariedMethods)}
                       details={
                         <>
-                          {teacherData.teachingMethods.length > 0 && (
+                          {/* MODIFIED: Applied normalizeToArray */}
+                          {normalizeToArray(teacherData.teachingMethods).length > 0 && (
                             <div className="mt-3 text-sm">
                               <span className="font-medium">{t("labels.usedMethods")}: </span>
-                              {teacherData.teachingMethods.join(" • ")}
+                              {normalizeToArray(teacherData.teachingMethods).join(" • ")}
                             </div>
                           )}
-                          {teacherData.gradesTaught.length > 0 && (
+                          {/* MODIFIED: Applied normalizeToArray */}
+                          {normalizeToArray(teacherData.gradesTaught).length > 0 && (
                             <div className="mt-1 text-sm">
                               <span className="font-medium">{t("labels.gradesTaught")}: </span>
-                              {teacherData.gradesTaught.join(" • ")}
+                              {normalizeToArray(teacherData.gradesTaught).join(" • ")}
                             </div>
                           )}
                           {teacherData.teachingMethodDescription && (
@@ -786,10 +793,11 @@ const handlePrint = () => {
                       answer={YesNo(teacherData.maintainedPositiveEnvironment)}
                       details={
                         <>
-                          {teacherData.environmentCommentsType.length > 0 && (
+                          {/* MODIFIED: Applied normalizeToArray */}
+                          {normalizeToArray(teacherData.environmentCommentsType).length > 0 && (
                             <div className="mt-3 text-sm">
                               <span className="font-medium">{t("labels.environmentComments")}: </span>
-                              {teacherData.environmentCommentsType.join(" • ")}
+                              {normalizeToArray(teacherData.environmentCommentsType).join(" • ")}
                             </div>
                           )}
                           {teacherData.teacherComment && (
@@ -806,10 +814,11 @@ const handlePrint = () => {
                       answer={YesNo(teacherData.providedClearFeedback)}
                       details={
                         <>
-                          {teacherData.feedbackQuality.length > 0 && (
+                          {/* MODIFIED: Applied normalizeToArray */}
+                          {normalizeToArray(teacherData.feedbackQuality).length > 0 && (
                             <div className="mt-3 text-sm">
                               <span className="font-medium">{t("labels.feedbackQuality")}: </span>
-                              {teacherData.feedbackQuality.join(" • ")}
+                              {normalizeToArray(teacherData.feedbackQuality).join(" • ")}
                             </div>
                           )}
                           {teacherData.studentsNeedingHelp && (
@@ -866,11 +875,12 @@ const handlePrint = () => {
                     <h4 className="text-lg font-semibold text-rose-700 mb-4">
                       {t("sections.atRiskStudents")}
                     </h4>
-                    {teacherData.atRiskStudentsReasons.length > 0 ? (
+                    {/* MODIFIED: Applied normalizeToArray */}
+                    {normalizeToArray(teacherData.atRiskStudentsReasons).length > 0 ? (
                       <div className="space-y-3 text-sm">
                         <p>
                           <strong>{t("labels.reasons")}:</strong>{" "}
-                          {teacherData.atRiskStudentsReasons.join(" • ")}
+                          {normalizeToArray(teacherData.atRiskStudentsReasons).join(" • ")}
                         </p>
                         {teacherData.atRiskStudentsNames && (
                           <p className="font-medium text-rose-800">
@@ -887,11 +897,12 @@ const handlePrint = () => {
                     <h4 className="text-lg font-semibold text-emerald-700 mb-4">
                       {t("sections.highPerformingStudents")}
                     </h4>
-                    {teacherData.highPerformingStudentsReasons.length > 0 ? (
+                    {/* MODIFIED: Applied normalizeToArray */}
+                    {normalizeToArray(teacherData.highPerformingStudentsReasons).length > 0 ? (
                       <div className="space-y-3 text-sm">
                         <p>
                           <strong>{t("labels.reasons")}:</strong>{" "}
-                          {teacherData.highPerformingStudentsReasons.join(" • ")}
+                          {normalizeToArray(teacherData.highPerformingStudentsReasons).join(" • ")}
                         </p>
                         {teacherData.highPerformingStudentsNames && (
                           <p className="font-medium text-emerald-800">
@@ -910,10 +921,11 @@ const handlePrint = () => {
                     {t("sections.challenges")}
                   </h3>
                   <div className="space-y-4 text-sm">
-                    {teacherData.issues.length > 0 && (
+                    {/* MODIFIED: Applied normalizeToArray */}
+                    {normalizeToArray(teacherData.issues).length > 0 && (
                       <p>
                         <strong>{t("labels.issues")}:</strong>{" "}
-                        {teacherData.issues.join(" • ")}
+                        {normalizeToArray(teacherData.issues).join(" • ")}
                       </p>
                     )}
                     {teacherData.mainChallenge && (
@@ -1025,7 +1037,7 @@ const handlePrint = () => {
                         </div>
                         <div className="flex justify-between">
                           <span>{t("sections.highPerformingStudents")}</span>
-                          <span className="font-medium">{adminData.monitoringScores.highPerforming}/8</span>
+                          <span className="font-medium">{adminData.monitoringScores.highPerform}/8</span>
                         </div>
                         <div className="border-t border-gray-300 pt-1 mt-1 flex justify-between font-bold">
                           <span>Total</span>
@@ -1172,9 +1184,9 @@ const handlePrint = () => {
                         />
                         <ScoreInput
                           label={t("sections.highPerformingStudents")}
-                          value={adminForm.monitoringScores.highPerforming}
+                          value={adminForm.monitoringScores.highPerform}
                           max={8}
-                          onChange={(v) => handleScoreChange("monitoringScores", "highPerforming", v)}
+                          onChange={(v) => handleScoreChange("monitoringScores", "highPerform", v)}
                         />
                       </div>
                     </div>
