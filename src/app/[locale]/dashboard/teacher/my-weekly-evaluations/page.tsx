@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface WeeklyReport {
   id: string
@@ -89,7 +90,13 @@ export default function TeacherReports() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">My Weekly Reports ({reports.length})</h1>
+      <div className='flex items-center justify-between'>
+          <h1 className="text-3xl font-bold text-slate-900 mb-8">My Weekly Reports ({reports.length})</h1> 
+        
+        <Link href="/dashboard/teacher/weekly-achievement" className="bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 px-4 rounded-xl">
+      Create New Report
+        </Link>
+      </div>
         
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
           <div className="grid md:grid-cols-3 gap-4">

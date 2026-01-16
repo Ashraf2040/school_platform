@@ -202,8 +202,8 @@ export default function TeacherDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-[#f1fbf9] to-[#eaf7f5] p-6">
       {/* Top accent */}
-      <div className="mx-auto mb-6 h-1 w-full max-w-5xl rounded-full bg-[#006d77]" />
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto mb-6 h-1 w-full  rounded-full bg-[#006d77]" />
+      <div className="mx-auto ">
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight text-[#064e4f]">
             {t('title')}
