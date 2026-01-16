@@ -1,76 +1,56 @@
-// src/app/api/upload/route.ts
 import { NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
 import fs from "fs/promises";
 import path from "path";
-
-let put: any;
-
-// نعمل import للـ blob بس على Vercel
-if (process.env.VERCEL) {
-  // lazy import
-  put = (await import("@vercel/blob")).put;
-}
+import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File | null;
+    const file = formData.get("file");
 
-    if (!file) {
-      return NextResponse.json({ error: "No file" }, { status: 400 });
+    // 1. التحقق من وجود الملف وأنه object
+    if (!file || typeof file !== "object") {
+      return NextResponse.json({ error: "No valid file provided" }, { status: 400 });
     }
 
-    // ✅ type validation
-    const isPdf = file.type === "application/pdf";
-    const isImage = file.type.startsWith("image/");
+    // 2. التأكد من خصائص الملف
+    const fileObj = file as any;
+    if (!fileObj.name || fileObj.size === undefined) {
+      return NextResponse.json({ error: "Invalid file structure" }, { status: 400 });
+    }
+
+    // 3. التحقق من نوع الملف (PDF أو صورة فقط)
+    const isPdf = fileObj.type === "application/pdf";
+    const isImage = fileObj.type?.startsWith("image/");
     if (!isPdf && !isImage) {
       return NextResponse.json(
-        { error: "Invalid file type" },
+        {
+          error: `Invalid file type (${fileObj.type}). Only PDF and Images are allowed.`,
+        },
         { status: 400 }
       );
     }
 
-    // ✅ size limit (مثال 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: "File too large" },
-        { status: 413 }
-      );
-    }
+    // 4. تحويل الملف إلى Buffer
+    const buffer = Buffer.from(await fileObj.arrayBuffer());
 
-    const safeName = file.name.replace(/\s+/g, "_");
-    const filename = `${uuidv4()}-${safeName}`;
+    // 5. إنشاء اسم فريد للملف مع الامتداد الأصلي
+    const filename = `${uuidv4()}${path.extname(fileObj.name)}`;
 
-    /* =======================
-       🖥️ LOCAL ENVIRONMENT
-    ======================= */
-    if (!process.env.VERCEL) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const uploadDir = path.join(process.cwd(), "public/uploads");
+    // 6. تحديد مسار المجلد الذي سيخزن فيه الملفات
+    const uploadDir = path.join(process.cwd(), "public/uploads");
 
-      await fs.mkdir(uploadDir, { recursive: true });
-      await fs.writeFile(path.join(uploadDir, filename), buffer);
+    // 7. إنشاء المجلد إذا لم يكن موجودًا
+    await fs.mkdir(uploadDir, { recursive: true });
 
-      return NextResponse.json({
-        url: `/uploads/${filename}`,
-      });
-    }
+    // 8. كتابة الملف في المجلد
+    await fs.writeFile(path.join(uploadDir, filename), buffer);
 
-    /* =======================
-       ☁️ VERCEL ENVIRONMENT
-    ======================= */
-    const blob = await put(`uploads/${filename}`, file, {
-      access: "public",
-    });
-
-    return NextResponse.json({ url: blob.url });
-
-  }  catch (error: any) {
-    console.error("UPLOAD ERROR DETAIL:", error);
-    return NextResponse.json(
-      { error: error.message || "Upload failed" },
-      { status: 500 }
-    );
+    // 9. إعادة رابط الملف للعميل
+    const url = `/uploads/${filename}`;
+    return NextResponse.json({ url });
+  } catch (error) {
+    console.error("Upload error:", error);
+    return NextResponse.json({ error: "Failed to save file" }, { status: 500 });
   }
 }

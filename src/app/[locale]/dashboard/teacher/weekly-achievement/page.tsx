@@ -173,24 +173,17 @@ export default function TeacherWeeklyAchievement() {
     // ============================
     // 1. File Upload Logic (Same technique as Inquest)
     // ============================
-   const uploadFile = async (file: any): Promise<string | null> => {
-  // لو مفيش ملف
+const uploadFile = async (file: any): Promise<string | null> => {
   if (!file) return null;
 
-  // 👈 الحل هنا
   const realFile = file instanceof FileList ? file[0] : file;
 
   if (!realFile || typeof realFile === "string") return null;
 
-  console.log("📤 Uploading file:", realFile.name, realFile.type, realFile.size);
-
   const formData = new FormData();
   formData.append("file", realFile);
-
-  const uploadRes = await fetch("/api/upload", {
-    method: "POST",
-    body: formData,
-  });
+const API_UPLOAD_URL = process.env.NEXT_PUBLIC_API_UPLOAD_URL || "http://localhost:3000";
+  const uploadRes = await fetch(`${API_UPLOAD_URL}/upload`, { method: "POST", body: formData });
 
   if (!uploadRes.ok) {
     const err = await uploadRes.json();

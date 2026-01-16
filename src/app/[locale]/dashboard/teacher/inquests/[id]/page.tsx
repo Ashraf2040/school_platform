@@ -101,10 +101,8 @@ export default function TeacherInquestDetail() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
+        const API_UPLOAD_URL = process.env.NEXT_PUBLIC_API_UPLOAD_URL || "http://localhost:3000";
+  const uploadRes = await fetch(`${API_UPLOAD_URL}/upload`, { method: "POST", body: formData });
 
         console.log("📥 Upload response status:", uploadRes.status);
 
