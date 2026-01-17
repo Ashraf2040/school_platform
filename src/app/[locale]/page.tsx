@@ -66,7 +66,7 @@ export default function HomePage() {
 
       {/* ================= HERO ================= */}
       <main className="relative z-10">
-        <div className="max-w-7xl mx-auto px-6 py-16 lg:py-32 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="max-w-[1440px] mx-auto px-6 py-16 lg:py-32 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left - Text */}
           <div className="space-y-8 text-center lg:text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
