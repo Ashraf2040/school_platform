@@ -290,7 +290,7 @@ export default function AttendancePage() {
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-center text-white">
           <div className="relative inline-block">
             <img
-              src={session?.user?.image || "/default-avatar.png"}
+              src={"/default-avatar.png"}
               alt={session?.user?.name || "User"}
               className="w-28 h-28 rounded-full border-4 border-white/30 shadow-lg object-cover"
             />

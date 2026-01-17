@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -30,8 +31,8 @@ type WorkShift = {
   endTime?: string | null;
 };
 
-// --- Helpers ---
-const formatDate = (dateString: string | undefined) => {
+// --- Helpers (Fixed to accept null) ---
+const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleString("ar-EG", {
     year: "numeric",
@@ -42,7 +43,7 @@ const formatDate = (dateString: string | undefined) => {
   });
 };
 
-const extractTime = (dateString: string | undefined) => {
+const extractTime = (dateString: string | null | undefined) => {
   if (!dateString) return "";
   try {
     return dateString.slice(11, 16);
@@ -295,6 +296,7 @@ export default function AdminDashboard() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600 font-mono">{formatDate(t.checkIn)}</td>
+                        {/* Error was here: formatDate expected string | undefined but t.checkOut is string | null. Now it accepts null */}
                         <td className="px-6 py-4 text-sm text-slate-600 font-mono">{formatDate(t.checkOut)}</td>
                       </tr>
                     )) : (
