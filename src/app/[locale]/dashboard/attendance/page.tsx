@@ -48,7 +48,7 @@ function getDistanceFromLatLonInKm(
   lat2: number,
   lon2: number
 ) {
-  const R = 6371; // Radius of the earth in km
+  const R = 6371;
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
   const a =
@@ -64,13 +64,13 @@ function deg2rad(deg: number) {
 }
 
 // ────────────────────────────────────────────────
-// Face Verification Modal - FIXED
+// Face Verification Modal - FIXED (Camera Logic)
 // ────────────────────────────────────────────────
 type FaceVerificationModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onVerified: () => void;
-  referenceDescriptor: Float32Array | null; // Now receives the computed descriptor
+  referenceDescriptor: Float32Array | null;
 };
 
 const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
@@ -80,6 +80,9 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
   referenceDescriptor,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  // Added streamRef to handle the stream lifecycle separately from the status state
+  const streamRef = useRef<MediaStream | null>(null);
+  
   const [status, setStatus] = useState<
     "init" | "loading_models" | "camera_ready" | "scanning" | "match_found" | "success" | "error"
   >("init");
@@ -88,33 +91,26 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [canConfirm, setCanConfirm] = useState(false);
 
-  // Use a ref to hold the descriptor to avoid re-creating intervals on prop changes
   const externalDescriptorRef = useRef<Float32Array | null>(null);
 
   useEffect(() => {
     externalDescriptorRef.current = referenceDescriptor;
   }, [referenceDescriptor]);
 
-  // Load models from CDN (once)
+  // Load models
   useEffect(() => {
     if (modelsLoaded) return;
-
     const loadModels = async () => {
       if (typeof window === "undefined") return;
-
       setStatus("loading_models");
-
       try {
-        const MODEL_URL =
-          "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
-
+        const MODEL_URL = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
         await Promise.all([
           faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
         ]);
-
-        console.log("[FaceAPI] Models loaded successfully from CDN");
+        console.log("[FaceAPI] Models loaded");
         setModelsLoaded(true);
         setStatus("camera_ready");
       } catch (err) {
@@ -123,52 +119,69 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
         setStatus("error");
       }
     };
-
     void loadModels();
   }, [modelsLoaded]);
 
-  // Camera setup
+  // 1. CLEANUP EFFECT: Stop camera ONLY when modal closes
   useEffect(() => {
-    if (!isOpen || status !== "camera_ready") return;
+    if (!isOpen) {
+      // Stop all tracks if the modal is closed
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      // Reset status so next time we open, we start fresh
+      setStatus("init"); 
+    }
+  }, [isOpen]);
 
-    let stream: MediaStream | null = null;
+  // 2. START EFFECT: Start camera when open and ready
+  useEffect(() => {
+    // Guard: Only run if open, models ready, and stream isn't already active
+    if (isOpen && status === "camera_ready" && !streamRef.current) {
+      const startCamera = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+              facingMode: "user",
+              width: { ideal: 640 },
+              height: { ideal: 480 }
+            },
+          });
 
-    const startCamera = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: "user",
-            width: { ideal: 640 },
-            height: { ideal: 480 }
-          },
-        });
+          streamRef.current = stream;
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          setStatus("scanning");
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            await videoRef.current.play();
+            // This status change triggers a re-render, but the CLEANUP EFFECT
+            // above will NOT run because isOpen is still true.
+            setStatus("scanning");
+          }
+        } catch (err) {
+          console.error("Camera access error:", err);
+          setErrorMessage("تعذر الوصول إلى الكاميرا");
+          setStatus("error");
         }
-      } catch (err) {
-        console.error("Camera access error:", err);
-        setErrorMessage("تعذر الوصول إلى الكاميرا");
-        setStatus("error");
-      }
-    };
+      };
 
-    void startCamera();
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
+      void startCamera();
+      
+      // Note: We do NOT stop the stream in this return cleanup.
+      // We let the "Cleanup Effect" handle stopping it when isOpen becomes false.
+      return () => {
+        // Optional: cleanup logic if needed, but keep stream alive
+      };
+    }
   }, [isOpen, status]);
 
   // Continuous face scanning
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
 
-    // Only scan if we have a reference descriptor from the DB
     if (status === "scanning" && videoRef.current && externalDescriptorRef.current) {
       intervalId = setInterval(async () => {
         if (!videoRef.current || !externalDescriptorRef.current) return;
@@ -186,11 +199,13 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
           
           setMatchScore(distance);
           
-          // Good match threshold (0.6 is standard)
           if (distance < 0.6) {
             setCanConfirm(true);
           } else {
             setCanConfirm(false);
+            // REMOVED: clearInterval(intervalId!) from here.
+            // We want the loop to keep running so if the user moves their face slightly,
+            // it can find it again immediately.
           }
         } else {
           setCanConfirm(false);
@@ -238,7 +253,7 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
           </button>
         </div>
 
-        {/* Camera View - Full width and responsive */}
+        {/* Camera View */}
         <div className="relative mx-auto mb-6 rounded-2xl overflow-hidden bg-gradient-to-b from-gray-900 to-black aspect-video max-w-[400px] w-full shadow-2xl border-4 border-gray-200/30">
           <video
             ref={videoRef}
@@ -275,7 +290,7 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
           )}
 
           {status === "camera_ready" && (
-            <p className="text-blue-600 font-bold text-lg">اضغط ابدأ للتحقق</p>
+            <p className="text-blue-600 font-bold text-lg">جاري بدء الكاميرا...</p>
           )}
 
           {status === "scanning" && (
@@ -300,7 +315,7 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
           )}
         </div>
 
-        {/* Action Buttons - Prominent Confirm button */}
+        {/* Action Buttons */}
         <div className="flex flex-col gap-3 pt-2">
           {status === "camera_ready" || status === "scanning" ? (
             <>
@@ -338,7 +353,7 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
 };
 
 // ────────────────────────────────────────────────
-// Main Attendance Page - Mobile Responsive
+// Main Attendance Page
 // ────────────────────────────────────────────────
 export default function AttendancePage() {
   const { data: session } = useSession();
@@ -348,7 +363,6 @@ export default function AttendancePage() {
   const [attendance, setAttendance] = useState<AttendanceRecord | null>(null);
   const [workShift, setWorkShift] = useState<WorkShift | null>(null);
 
-  // ADDED: State to hold the face descriptor fetched from DB
   const [userFaceDescriptor, setUserFaceDescriptor] = useState<Float32Array | null>(null);
 
   // Leave request states
@@ -406,14 +420,16 @@ export default function AttendancePage() {
       }
     };
 
-    // ADDED: Fetch the user's face descriptor
     const fetchFaceDescriptor = async () => {
       try {
         const res = await fetch("/api/user/me");
         if (res.ok) {
           const data = await res.json();
-          // Convert plain array to Float32Array for face-api
-          setUserFaceDescriptor(new Float32Array(data.descriptor));
+          if (Array.isArray(data.descriptor) && data.descriptor.length === 128) {
+            setUserFaceDescriptor(new Float32Array(data.descriptor));
+          } else {
+            setUserFaceDescriptor(null);
+          }
         } else {
             console.warn("No face descriptor found for user");
         }
@@ -557,6 +573,12 @@ export default function AttendancePage() {
                 OFFICE_LOCATION.radiusInMeters
               } متر.`
             );
+            setProcessing(false);
+            return;
+          }
+          
+          if (!userFaceDescriptor) {
+            toast.error("لا يوجد بصمة وجه مسجلة، يرجى تسجيل وجهك أولاً");
             setProcessing(false);
             return;
           }
@@ -918,7 +940,6 @@ export default function AttendancePage() {
         isOpen={showFaceModal}
         onClose={() => setShowFaceModal(false)}
         onVerified={onFaceVerified}
-        // Passing the fetched descriptor directly instead of the image URL
         referenceDescriptor={userFaceDescriptor}
       />
     </div>
