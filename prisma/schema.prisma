@@ -18,11 +18,16 @@ model User {
   jobTitle               String?
   schoolName             String?
   specialty              String?
+  faceDescriptor         String?
+  phone                  String?
+  image                  String?
   announcements          Announcement[]          @relation("AnnouncementsCreated")
   announcementRecipients AnnouncementRecipient[]
+  attendances            Attendance[]
   classesTaught          ClassOnTeacher[]
   inquestsCreated        Inquest[]               @relation("InquestsCreated")
   inquestsReceived       Inquest[]               @relation("InquestsReceived")
+  leaveRequests          LeaveRequest[]
   lessons                Lesson[]
   notifications          Notification[]
   passwordResetTokens    PasswordResetToken[]
@@ -32,10 +37,6 @@ model User {
   absences               Substitution[]          @relation("AbsentTeacher")
   replacements           Substitution[]          @relation("ReplacementTeacher")
   weeklyReports          WeeklyReport[]
-
-  attendances Attendance[]
-
-  leaveRequests LeaveRequest[]
 }
 
 model PasswordResetToken {
@@ -327,6 +328,42 @@ model WeeklyReport {
   @@index([evaluatedAt])
 }
 
+model Attendance {
+  id        String    @id @default(uuid())
+  teacherId String
+  checkIn   DateTime
+  checkOut  DateTime?
+  latitude  Float?
+  longitude Float?
+  imageUrl  String?
+  createdAt DateTime  @default(now())
+  teacher   User      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId])
+  @@index([checkIn])
+}
+
+model LeaveRequest {
+  id        String      @id @default(uuid())
+  teacherId String
+  leaveDate DateTime
+  leaveTime String
+  reason    String
+  status    LeaveStatus @default(PENDING)
+  adminNote String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  teacher   User        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+}
+
+model WorkShift {
+  id        String    @id @default(uuid())
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime?
+  createdAt DateTime  @default(now())
+}
+
 enum Role {
   ADMIN
   TEACHER
@@ -350,43 +387,8 @@ enum AnnouncementType {
   DRAW_ATTENTION
 }
 
-model Attendance {
-  id        String   @id @default(uuid())
-  teacherId String
-  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  checkIn   DateTime
-  checkOut  DateTime?
-  latitude  Float?
-  longitude Float?
-  imageUrl  String?
-  createdAt DateTime @default(now())
-
-  @@index([teacherId])
-  @@index([checkIn])
-}
-
-model LeaveRequest {
-  id          String   @id @default(uuid())
-  teacherId   String
-  teacher     User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  leaveDate   DateTime
-  leaveTime   String   // أو Time إذا حبيت تفصل الوقت
-  reason      String
-  status      LeaveStatus @default(PENDING)
-  adminNote   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
 enum LeaveStatus {
   PENDING
   APPROVED
   REJECTED
-}
-model WorkShift {
-  id        String   @id @default(uuid())
-  date      DateTime
-  startTime DateTime
-  endTime   DateTime?
-  createdAt DateTime @default(now())
 }

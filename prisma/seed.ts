@@ -1,46 +1,53 @@
-// prisma/seed.ts
 import "dotenv/config";
-import { PrismaClient, Role } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+// import prisma from "../lib/prisma";
+import { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
+/**
+ * CLEAN DATABASE (VPS SAFE)
+ */
+async function cleanDatabase() {
+  console.log("→ Cleaning tables (safe delete)...");
 
-const prisma = new PrismaClient({
-  adapter,
-});
-
-async function main() {
-  console.log("Seeding: Subjects → Classes → Admin → Teachers + Relations (2025-2026)...");
-
-  // === FULL CLEANUP IN CORRECT ORDER (to avoid FK violations) ===
-  console.log("Cleaning database...");
+  await prisma.attendance.deleteMany();
+  await prisma.leaveRequest.deleteMany();
+  await prisma.weeklyReport.deleteMany();
+  await prisma.scheduleItem.deleteMany();
+  await prisma.schedule.deleteMany();
+  await prisma.substitution.deleteMany();
+  await prisma.lesson.deleteMany();
+  await prisma.announcementRecipient.deleteMany();
+  await prisma.announcement.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.inquest.deleteMany();
+  await prisma.passwordResetToken.deleteMany();
 
   await prisma.classOnTeacher.deleteMany();
   await prisma.subjectOnTeacher.deleteMany();
-  await prisma.announcementRecipient.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.passwordResetToken.deleteMany();
-  await prisma.inquest.deleteMany();
-  await prisma.announcement.deleteMany();
-  await prisma.lesson.deleteMany();
-  await prisma.scheduleItem.deleteMany();
-  await prisma.substitution.deleteMany();
-  await prisma.schedule.deleteMany();
-  await prisma.weeklyPlanItem.deleteMany();
-  await prisma.weeklyPlan.deleteMany();
   await prisma.gradeSubject.deleteMany();
 
-  await prisma.user.deleteMany();
+  await prisma.weeklyPlanItem.deleteMany();
+  await prisma.weeklyPlan.deleteMany();
+
   await prisma.class.deleteMany();
   await prisma.subject.deleteMany();
   await prisma.grade.deleteMany();
   await prisma.academicYear.deleteMany();
+  await prisma.user.deleteMany();
 
+  console.log("→ Database cleaned safely");
+}
+
+
+async function main() {
+  console.log("Seeding: Subjects → Classes → Admin → Teachers (2025–2026)");
+
+  // ================= CLEAN =================
+  console.log("Cleaning database...");
+  await cleanDatabase();
   console.log("Database cleaned successfully.");
 
-  // === ACADEMIC YEAR ===
+  // ================= ACADEMIC YEAR =================
   const year = await prisma.academicYear.create({
     data: {
       name: "2025-2026",
@@ -50,7 +57,7 @@ async function main() {
     },
   });
 
-  // === SUBJECTS ===
+  // ================= SUBJECTS =================
   const subjects = [
     "AP Biology", "Arabic", "Biology", "Chemistry", "Economics", "English",
     "French", "ICT", "Internet of Things", "Islamic", "Life Skills", "Math",
@@ -59,42 +66,32 @@ async function main() {
   ];
 
   for (const name of subjects) {
-    await prisma.subject.upsert({
-      where: { name },
-      update: {},
-      create: { name },
-    });
+    await prisma.subject.create({ data: { name } });
   }
 
-  // === CLASSES ===
+  // ================= CLASSES =================
   const classNames = [
-    "1A", "2A", "3A", "4A", "4B", "4C", "5A", "5B", "5C",
-    "6A", "6B", "6C", "6G",
-    "7A", "7B", "7C", "7G",
-    "8A", "8G",
-    "9A", "9B", "9C",
-    "10A", "10B",
-    "11A", "11B", "11C",
-    "12A", "12B",
+    "1A","2A","3A","4A","4B","4C","5A","5B","5C",
+    "6A","6B","6C","6G",
+    "7A","7B","7C","7G",
+    "8A","8G",
+    "9A","9B","9C",
+    "10A","10B",
+    "11A","11B","11C",
+    "12A","12B",
   ];
 
   for (const name of classNames) {
-    await prisma.class.upsert({
-      where: { name },
-      update: {},
-      create: { name },
-    });
+    await prisma.class.create({ data: { name } });
   }
 
-  // === ADMIN (plain text password) ===
-  const admin = await prisma.user.upsert({
-    where: { username: "admin" },
-    update: {},
-    create: {
+  // ================= ADMIN =================
+  const admin = await prisma.user.create({
+    data: {
       username: "admin",
       email: "admin@example.com",
       name: "Admin User",
-      password: "admin123",  // ← Plain text
+      password: "admin123", // plain text (seed only)
       role: Role.ADMIN,
     },
   });
@@ -153,21 +150,15 @@ async function main() {
 
   console.log(`Creating ${teachersData.length} teachers...`);
 
+  let counter = 0;
+
   for (const t of teachersData) {
-    const user = await prisma.user.upsert({
-      where: { username: t.username },
-      update: {
-        name: t.name,
-        specialty: t.specialty,
-        jobTitle: t.subjects.join(" | "),
-        schoolName: "Your School Name",
-        password: teacherPlainPassword,  // ← Plain text on update too
-      },
-      create: {
+    const user = await prisma.user.create({
+      data: {
         username: t.username,
         email: `${t.username}@school.example.com`,
         name: t.name,
-        password: teacherPlainPassword,  // ← Plain text
+        password: teacherPlainPassword,
         role: Role.TEACHER,
         specialty: t.specialty,
         jobTitle: t.subjects.join(" | "),
@@ -175,39 +166,45 @@ async function main() {
       },
     });
 
-    // Connect classes
     for (const className of t.classes) {
       const cls = await prisma.class.findUnique({ where: { name: className } });
       if (cls) {
-        await prisma.classOnTeacher.upsert({
-          where: { teacherId_classId: { teacherId: user.id, classId: cls.id } },
-          update: {},
-          create: { teacherId: user.id, classId: cls.id },
+        await prisma.classOnTeacher.create({
+          data: {
+            teacherId: user.id,
+            classId: cls.id,
+          },
         });
       }
     }
 
-    // Connect subjects
     for (const subjectName of t.subjects) {
       const subj = await prisma.subject.findUnique({ where: { name: subjectName } });
       if (subj) {
-        await prisma.subjectOnTeacher.upsert({
-          where: { teacherId_subjectId: { teacherId: user.id, subjectId: subj.id } },
-          update: {},
-          create: { teacherId: user.id, subjectId: subj.id },
+        await prisma.subjectOnTeacher.create({
+          data: {
+            teacherId: user.id,
+            subjectId: subj.id,
+          },
         });
       }
     }
+
+    counter++;
+    if (counter % 5 === 0) {
+      console.log(`✔ ${counter} teachers created`);
+    }
   }
 
-  // === SAMPLE INQUEST (optional) ===
+  // ================= SAMPLE INQUEST =================
   const firstTeacher = await prisma.user.findFirst({ where: { role: Role.TEACHER } });
+
   if (firstTeacher) {
     await prisma.inquest.create({
       data: {
         inquestType: "ABSENT",
-        reason: "Sample absent inquest from seed.",
-        details: "This is a test inquest created during seeding.",
+        reason: "Sample absent inquest from seed",
+        details: "Created during seeding",
         academicYearId: year.id,
         createdById: admin.id,
         teacherId: firstTeacher.id,
@@ -215,11 +212,9 @@ async function main() {
     });
   }
 
-  console.log("Seed completed successfully!");
-  console.log("\nLogin credentials (plain text passwords):");
-  console.log("Admin:     username: admin           password: admin123");
-  console.log(`Teachers (${teachersData.length}): username = their username, password: P@55word`);
-  console.log("Example:   username: ae3114399      password: P@55word");
+  console.log("✅ Seed completed successfully!");
+  console.log("Admin → admin / admin123");
+  console.log("Teachers → username / P@55word");
 }
 
 main()
@@ -227,6 +222,4 @@ main()
     console.error("Seed failed:", e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .finally(() => process.exit(0));
