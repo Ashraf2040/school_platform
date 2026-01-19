@@ -64,23 +64,22 @@ function deg2rad(deg: number) {
 }
 
 // ────────────────────────────────────────────────
-// Face Verification Modal - IMPROVED
+// Face Verification Modal - FIXED
 // ────────────────────────────────────────────────
 type FaceVerificationModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onVerified: () => void;
-  userImage: string | null | undefined;
+  referenceDescriptor: Float32Array | null; // Now receives the computed descriptor
 };
 
 const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
   isOpen,
   onClose,
   onVerified,
-  userImage,
+  referenceDescriptor,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<
     "init" | "loading_models" | "camera_ready" | "scanning" | "match_found" | "success" | "error"
   >("init");
@@ -88,7 +87,13 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
   const [errorMessage, setErrorMessage] = useState("");
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [canConfirm, setCanConfirm] = useState(false);
-  const referenceDescriptorRef = useRef<Float32Array | null>(null);
+
+  // Use a ref to hold the descriptor to avoid re-creating intervals on prop changes
+  const externalDescriptorRef = useRef<Float32Array | null>(null);
+
+  useEffect(() => {
+    externalDescriptorRef.current = referenceDescriptor;
+  }, [referenceDescriptor]);
 
   // Load models from CDN (once)
   useEffect(() => {
@@ -121,29 +126,6 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
 
     void loadModels();
   }, [modelsLoaded]);
-
-  // Load reference face descriptor once
-  useEffect(() => {
-    if (!userImage || !modelsLoaded) return;
-
-    const loadReferenceFace = async () => {
-      try {
-        const referenceImage = await faceapi.fetchImage(userImage);
-        const refResult = await faceapi
-          .detectSingleFace(referenceImage)
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        if (refResult) {
-          referenceDescriptorRef.current = refResult.descriptor;
-        }
-      } catch (err) {
-        console.error("Failed to load reference face:", err);
-      }
-    };
-
-    void loadReferenceFace();
-  }, [userImage, modelsLoaded]);
 
   // Camera setup
   useEffect(() => {
@@ -186,24 +168,25 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
 
-    if (status === "scanning" && videoRef.current && referenceDescriptorRef.current) {
+    // Only scan if we have a reference descriptor from the DB
+    if (status === "scanning" && videoRef.current && externalDescriptorRef.current) {
       intervalId = setInterval(async () => {
-        if (!videoRef.current || !referenceDescriptorRef.current) return;
+        if (!videoRef.current || !externalDescriptorRef.current) return;
 
         const detection = await faceapi
           .detectSingleFace(videoRef.current)
           .withFaceLandmarks()
           .withFaceDescriptor();
 
-        if (detection && referenceDescriptorRef.current) {
+        if (detection && externalDescriptorRef.current) {
           const distance = faceapi.euclideanDistance(
-            referenceDescriptorRef.current,
+            externalDescriptorRef.current,
             detection.descriptor
           );
           
           setMatchScore(distance);
           
-          // Good match threshold
+          // Good match threshold (0.6 is standard)
           if (distance < 0.6) {
             setCanConfirm(true);
           } else {
@@ -365,6 +348,9 @@ export default function AttendancePage() {
   const [attendance, setAttendance] = useState<AttendanceRecord | null>(null);
   const [workShift, setWorkShift] = useState<WorkShift | null>(null);
 
+  // ADDED: State to hold the face descriptor fetched from DB
+  const [userFaceDescriptor, setUserFaceDescriptor] = useState<Float32Array | null>(null);
+
   // Leave request states
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [leaveDate, setLeaveDate] = useState("");
@@ -381,7 +367,6 @@ export default function AttendancePage() {
   const [progress, setProgress] = useState<number>(0);
   const intervalRef = useRef<number | null>(null);
 
-  // ... rest of your existing functions remain the same ...
   const fetchAttendance = async () => {
     try {
       const res = await fetch("/api/attendance");
@@ -421,9 +406,26 @@ export default function AttendancePage() {
       }
     };
 
+    // ADDED: Fetch the user's face descriptor
+    const fetchFaceDescriptor = async () => {
+      try {
+        const res = await fetch("/api/user/me");
+        if (res.ok) {
+          const data = await res.json();
+          // Convert plain array to Float32Array for face-api
+          setUserFaceDescriptor(new Float32Array(data.descriptor));
+        } else {
+            console.warn("No face descriptor found for user");
+        }
+      } catch (error) {
+        console.error("Failed to fetch face descriptor:", error);
+      }
+    };
+
     void fetchAttendance();
     void fetchWorkShift();
     void fetchLeaveRequests();
+    void fetchFaceDescriptor();
 
     return () => {
       if (intervalRef.current !== null) {
@@ -916,7 +918,8 @@ export default function AttendancePage() {
         isOpen={showFaceModal}
         onClose={() => setShowFaceModal(false)}
         onVerified={onFaceVerified}
-        userImage={session?.user?.image}
+        // Passing the fetched descriptor directly instead of the image URL
+        referenceDescriptor={userFaceDescriptor}
       />
     </div>
   );
