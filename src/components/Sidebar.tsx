@@ -166,7 +166,7 @@ export default function Sidebar({ role }: { role: string }) {
                   }`}
                 </SidebarLink>
                 <SidebarLink
-                  href="/dashboard/attendance"
+                  href="/dashboard/attendanceAdmin"
                   icon={icons.announcements}
                   active={isActive("/dashboard/attendanceAdmin")}
                   onClick={() => setIsOpen(false)}
