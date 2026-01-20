@@ -165,6 +165,15 @@ export default function Sidebar({ role }: { role: string }) {
                       : "تقارير التقييم الاسبوعية"
                   }`}
                 </SidebarLink>
+                <SidebarLink
+                  href="/dashboard/attendance"
+                  icon={icons.announcements}
+                  active={isActive("/dashboard/attendanceAdmin")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {`${locale === "en" ? "Attendance" : "الحضور والغياب"}`}
+                </SidebarLink>
               </>
             )}
 

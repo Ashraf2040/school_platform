@@ -36,8 +36,8 @@ type LeaveRequest = {
 // Office Location Config
 // ────────────────────────────────────────────────
 const OFFICE_LOCATION = {
-  lat: 21.434300867,
-  lng: 39.798508625,
+  lat: 21.435061627320483,
+  lng: 39.77167152505505,
   radiusInMeters: 500,
 };
 
@@ -64,7 +64,7 @@ function deg2rad(deg: number) {
 }
 
 // ────────────────────────────────────────────────
-// Face Verification Modal - FIXED (Camera Logic)
+// Face Verification Modal
 // ────────────────────────────────────────────────
 type FaceVerificationModalProps = {
   isOpen: boolean;
@@ -80,7 +80,6 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
   referenceDescriptor,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  // Added streamRef to handle the stream lifecycle separately from the status state
   const streamRef = useRef<MediaStream | null>(null);
   
   const [status, setStatus] = useState<
@@ -97,7 +96,7 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
     externalDescriptorRef.current = referenceDescriptor;
   }, [referenceDescriptor]);
 
-  // Load models
+  // Load models once globally
   useEffect(() => {
     if (modelsLoaded) return;
     const loadModels = async () => {
@@ -122,10 +121,9 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
     void loadModels();
   }, [modelsLoaded]);
 
-  // 1. CLEANUP EFFECT: Stop camera ONLY when modal closes
+  // 1. CLEANUP EFFECT: Stop camera when modal closes
   useEffect(() => {
     if (!isOpen) {
-      // Stop all tracks if the modal is closed
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
@@ -133,14 +131,12 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-      // Reset status so next time we open, we start fresh
       setStatus("init"); 
     }
   }, [isOpen]);
 
   // 2. START EFFECT: Start camera when open and ready
   useEffect(() => {
-    // Guard: Only run if open, models ready, and stream isn't already active
     if (isOpen && status === "camera_ready" && !streamRef.current) {
       const startCamera = async () => {
         try {
@@ -157,8 +153,6 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
             await videoRef.current.play();
-            // This status change triggers a re-render, but the CLEANUP EFFECT
-            // above will NOT run because isOpen is still true.
             setStatus("scanning");
           }
         } catch (err) {
@@ -170,10 +164,8 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
 
       void startCamera();
       
-      // Note: We do NOT stop the stream in this return cleanup.
-      // We let the "Cleanup Effect" handle stopping it when isOpen becomes false.
       return () => {
-        // Optional: cleanup logic if needed, but keep stream alive
+        // Stream cleanup handled by the isOpen watcher
       };
     }
   }, [isOpen, status]);
@@ -203,9 +195,6 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
             setCanConfirm(true);
           } else {
             setCanConfirm(false);
-            // REMOVED: clearInterval(intervalId!) from here.
-            // We want the loop to keep running so if the user moves their face slightly,
-            // it can find it again immediately.
           }
         } else {
           setCanConfirm(false);
@@ -240,7 +229,6 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 w-full max-w-md mx-4 shadow-2xl border border-white/20 max-h-[90vh] flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
             التحقق من الهوية
@@ -253,7 +241,6 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
           </button>
         </div>
 
-        {/* Camera View */}
         <div className="relative mx-auto mb-6 rounded-2xl overflow-hidden bg-gradient-to-b from-gray-900 to-black aspect-video max-w-[400px] w-full shadow-2xl border-4 border-gray-200/30">
           <video
             ref={videoRef}
@@ -262,7 +249,6 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
             playsInline
             className="w-full h-full object-cover"
           />
-          {/* Face match indicator */}
           {status === "scanning" && (
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
               <div className="text-center text-white">
@@ -280,7 +266,6 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
           )}
         </div>
 
-        {/* Status Messages */}
         <div className="space-y-3 mb-6 text-center">
           {status === "loading_models" && (
             <div className="flex items-center justify-center gap-3 text-blue-600">
@@ -288,11 +273,9 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
               <span>جاري تحميل نماذج الذكاء...</span>
             </div>
           )}
-
           {status === "camera_ready" && (
             <p className="text-blue-600 font-bold text-lg">جاري بدء الكاميرا...</p>
           )}
-
           {status === "scanning" && (
             <p className={`text-lg font-bold flex items-center justify-center gap-2 ${
               canConfirm ? 'text-green-600' : 'text-yellow-600'
@@ -300,13 +283,11 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
               {canConfirm ? '✓ جاهز للتأكيد' : '🔄 جاري البحث عن الوجه...'}
             </p>
           )}
-
           {(status === "error" || errorMessage) && (
             <p className="text-red-600 bg-red-50 p-3 rounded-xl border border-red-200">
               {errorMessage}
             </p>
           )}
-
           {status === "success" && (
             <div className="bg-green-50 border-2 border-green-200 p-4 rounded-2xl">
               <div className="text-4xl mb-2">✓</div>
@@ -315,7 +296,6 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
           )}
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-col gap-3 pt-2">
           {status === "camera_ready" || status === "scanning" ? (
             <>
@@ -612,7 +592,8 @@ export default function AttendancePage() {
 
       if (res.ok) {
         toast.success(data.message);
-        setAttendance(data.attendance);
+        // Set the new state directly from the response
+        setAttendance(data.attendance); 
       } else {
         toast.error(data.error || "حدث خطأ");
       }
@@ -625,17 +606,32 @@ export default function AttendancePage() {
     }
   };
 
-  const onFaceVerified = () => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        void sendAttendance(pos.coords.latitude, pos.coords.longitude);
-        void fetchAttendance();
-      },
-      () => {
-        void sendAttendance(null, null);
-        void fetchAttendance();
-      }
-    );
+  // ────────────────────────────────────────────────
+  // FIXED: onFaceVerified
+  // ────────────────────────────────────────────────
+  const onFaceVerified = async () => {
+    // We wrap the geolocation in a Promise to make it awaitable
+    const getPosition = (): Promise<GeolocationPosition> => {
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+    };
+
+    try {
+      const pos = await getPosition();
+      // 1. Wait for the attendance to be saved
+      await sendAttendance(pos.coords.latitude, pos.coords.longitude);
+      
+      // 2. AFTER saving, fetch fresh data to ensure UI is synced
+      await fetchAttendance();
+      
+      // 3. Close modal is handled by the modal's own logic, 
+      // but we are good here because state is updated.
+    } catch (err) {
+      // If geolocation fails during verification, try sending without it
+      await sendAttendance(null, null);
+      await fetchAttendance();
+    }
   };
 
   const submitLeaveRequest = async () => {
@@ -716,6 +712,29 @@ export default function AttendancePage() {
           <p className="text-blue-100 text-xs sm:text-sm opacity-90">
             {session?.user?.email}
           </p>
+
+          {/* ───── NEW: Work Shift Display Under Profile ───── */}
+          {workShift && (
+            <div className="mt-3 inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 shadow-sm animate-fade-in-down">
+              <span className="text-xs font-bold text-white/90">⏰ دوام العمل:</span>
+              <span className="text-xs font-semibold text-white tracking-wide">
+                {new Date(workShift.startTime).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })}
+                {" - "}
+                {workShift.endTime
+                  ? new Date(workShift.endTime).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    })
+                  : "--:--"}
+              </span>
+            </div>
+          )}
+          {/* ──────────────────────────────────────────────────── */}
         </div>
 
         {/* Main content */}
