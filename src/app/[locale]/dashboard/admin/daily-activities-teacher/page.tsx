@@ -1,4 +1,3 @@
-// app/teacher/page.tsx
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -11,7 +10,7 @@ type Lesson = {
   id: string;
   classId: string;
   subjectId: string;
-  date: string; // YYYY-MM-DD
+  date: string; 
   unit: string;
   lesson: string;
   objective: string;
@@ -53,13 +52,14 @@ export default function TeacherDashboard() {
     return p.finally(() => setPendingCount((c) => Math.max(0, c - 1)));
   };
 
+  // NEW: One-time loading state
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   // JSON fetch helper
   const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
     const res = await fetch(input, init);
     let data: any = null;
-    try {
-      data = await res.json();
-    } catch {}
+    try { data = await res.json(); } catch {}
     if (!res.ok) {
       const message = data?.error || res.statusText || 'Request failed';
       throw new Error(message);
@@ -88,6 +88,7 @@ export default function TeacherDashboard() {
             setClasses(c);
             setSubjects(s);
             setTodayLessons(l);
+            setIsInitialLoad(false); // Mark as loaded
           })
         ),
         {
@@ -186,9 +187,30 @@ export default function TeacherDashboard() {
     } catch {}
   };
 
+  // NEW: Delete Handler
+  const handleDelete = async (id: string) => {
+    if (!window.confirm(t('confirmDelete') || "Are you sure you want to delete this lesson?")) {
+      return;
+    }
+
+    try {
+      await toast.promise(
+        track(fetchJson(`/api/lessons/${id}`, { method: 'DELETE' })),
+        {
+          loading: t('toast.deleting'),
+          success: t('toast.lessonDeleted'),
+          error: (e) => `${t('toast.deleteFailed')}: ${String((e as any)?.message || e)}`,
+        }
+      ).then(() => refreshTodayLessons());
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const todaysTeacherLessons = todayLessons.filter((l: any) => l.teacherId === teacherId);
 
-  if (status === 'loading') {
+  // FIX: Only show initial loading spinner if it's the very first load
+  if (status === 'loading' || isInitialLoad) {
     return (
       <div className="min-h-screen grid place-items-center bg-gradient-to-br from-white via-[#f1fbf9] to-[#eaf7f5]">
         <div className="inline-flex items-center gap-3 text-[#006d77]">
@@ -202,8 +224,8 @@ export default function TeacherDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-[#f1fbf9] to-[#eaf7f5] p-6">
       {/* Top accent */}
-      <div className="mx-auto mb-6 h-1 w-full  rounded-full bg-[#006d77]" />
-      <div className="mx-auto ">
+      <div className="mx-auto mb-6 h-1 w-full rounded-full bg-[#006d77]" />
+      <div className="mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight text-[#064e4f]">
             {t('title')}
@@ -534,13 +556,23 @@ export default function TeacherDashboard() {
                               </button>
                             </div>
                           ) : (
-                            <button
-                              onClick={() => startEdit(row)}
-                              disabled={pendingCount > 0}
-                              className="rounded-md bg-[#83c5be] px-3 py-1.5 text-slate-900 shadow-sm ring-1 ring-[#83c5be]/40 transition hover:bg-[#83c5be]/90 disabled:opacity-60"
-                            >
-                              {t('buttons.edit')}
-                            </button>
+                            // NEW: Delete button added here
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => startEdit(row)}
+                                disabled={pendingCount > 0}
+                                className="rounded-md bg-[#83c5be] px-3 py-1.5 text-slate-900 shadow-sm ring-1 ring-[#83c5be]/40 transition hover:bg-[#83c5be]/90 disabled:opacity-60"
+                              >
+                                {t('buttons.edit')}
+                              </button>
+                              <button
+                                onClick={() => handleDelete(row.id)}
+                                disabled={pendingCount > 0}
+                                className="rounded-md bg-white border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1.5 shadow-sm ring-1 ring-red-100 transition disabled:opacity-60"
+                              >
+                               Delete
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>

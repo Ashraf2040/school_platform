@@ -685,7 +685,8 @@
     "noReport": "No report submitted",
     "viewReport": "View Report",
     "daysAgo": "{count} days ago",
-    "today":"Today"
+    "today":"Today",
+    "yesterday":"Yesterday"
   }
  
 

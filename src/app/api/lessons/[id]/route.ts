@@ -4,15 +4,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 
-
-// Optional: ensure Node.js runtime
 export const runtime = 'nodejs';
-
-// Serverless-safe Prisma clie
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }  // ← params is now a Promise!
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,14 +16,12 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // ← Critical fix: await the params
     const { id: lessonId } = await params;
 
     if (!lessonId) {
       return NextResponse.json({ error: 'Missing lesson id' }, { status: 400 });
     }
 
-    // Parse and whitelist fields
     const body = await req.json().catch(() => ({}));
     const { unit, lesson, objective, homework, pages, comments } = body ?? {};
     const data: Record<string, any> = {};
@@ -42,7 +36,6 @@ export async function PUT(
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
-    // Load existing to check ownership and date
     const existing = await prisma.lesson.findUnique({
       where: { id: lessonId },
       select: { id: true, teacherId: true, date: true },
@@ -56,7 +49,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Enforce "current day only"
     const todayStr = new Date().toISOString().slice(0, 10);
     const existingDateStr = existing.date
       ? new Date(existing.date).toISOString().slice(0, 10)
@@ -69,7 +61,6 @@ export async function PUT(
       );
     }
 
-    // Update and include relations for UI
     const updated = await prisma.lesson.update({
       where: { id: lessonId },
       data,
@@ -82,6 +73,63 @@ export async function PUT(
     return NextResponse.json(updated, { status: 200 });
   } catch (err) {
     console.error('PUT /api/lessons/[id] failed:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// ==========================================
+// NEW: DELETE Method
+// ==========================================
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id: lessonId } = await params;
+
+    if (!lessonId) {
+      return NextResponse.json({ error: 'Missing lesson id' }, { status: 400 });
+    }
+
+    // Check ownership
+    const existing = await prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: { id: true, teacherId: true, date: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
+    }
+
+    if (existing.teacherId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Enforce "current day only" check for deletion too
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const existingDateStr = existing.date
+      ? new Date(existing.date).toISOString().slice(0, 10)
+      : '';
+
+    if (existingDateStr !== todayStr) {
+      return NextResponse.json(
+        { error: 'Deleting allowed only for today’s lessons' },
+        { status: 403 }
+      );
+    }
+
+    await prisma.lesson.delete({
+      where: { id: lessonId },
+    });
+
+    return NextResponse.json({ message: 'Lesson deleted successfully' }, { status: 200 });
+  } catch (err) {
+    console.error('DELETE /api/lessons/[id] failed:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

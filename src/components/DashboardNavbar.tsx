@@ -65,7 +65,7 @@ export default function DashboardNavbar() {
       .toUpperCase() || "U";
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-slate-200/60 bg-white/90 backdrop-blur-md shadow-sm shadow-slate-100/50">
+    <header className=" top-0 z-30 w-full border-b border-slate-200/60 bg-white/90 backdrop-blur-md shadow-sm shadow-slate-100/50">
       {/* Gradient Accent Bar */}
       <div className="h-1 w-full bg-gradient-to-r from-teal-500 to-emerald-600" />
       

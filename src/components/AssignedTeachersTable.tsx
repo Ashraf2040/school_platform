@@ -1,4 +1,3 @@
-// components/AssignedTeachersTable.tsx
 import { useMemo } from 'react';
 import { formatTime } from '@/utils';
 
@@ -27,44 +26,34 @@ export default function AssignedTeachersTable({
   scheduleInfo,
   filter,
 }: Props) {
-  console.log('AssignedTeachersTable RENDER →', {
-    show,
-    dataLength: data.length,
-    filter,
-    scheduleInfoKeys: Object.keys(scheduleInfo),
-    dayIndex: filter.date ? new Date(filter.date).getDay() : null,
-  });
-
   const teachersForToday = useMemo(() => {
-  if (!show || !filter.date || !scheduleInfo) {
-    console.log('useMemo: early return → missing show/date/scheduleInfo');
-    return [];
-  }
+    if (!show || !filter.date || !scheduleInfo) {
+      return [];
+    }
 
-  const dayIndex = new Date(filter.date).getDay();
-  const daySchedule = scheduleInfo[dayIndex] ?? [];
-  console.log('useMemo: daySchedule →', daySchedule);
+    const dayIndex = new Date(filter.date).getDay();
+    const daySchedule = scheduleInfo[dayIndex] ?? [];
 
-  // Since daySchedule is string[] (subject IDs), use directly
-  const scheduledSubjectIds = new Set<string>(daySchedule);
-  console.log('useMemo: scheduledSubjectIds →', Array.from(scheduledSubjectIds));
+    // مجموعة مواد اليوم
+    const scheduledSubjectIds = new Set<string>(daySchedule);
 
-  const filtered = data.filter(t =>
-    t.missingSubjectIds.some(id => scheduledSubjectIds.has(id))
-  );
-  console.log('useMemo: filtered teachers →', filtered.map(t => ({ id: t.id, name: t.name })));
+    // هنا بدل ما نفلتر المدرسين الناقصين نعرض كل المدرسين اللي ليهم على الأقل مادة في جدول اليوم
+    const filtered = data.filter(t =>
+      // المدرس ليه مادة واحدة على الأقل في جدول اليوم (مش شرط يكون ناقص درس)
+      t.missingSubjectIds.some(id => scheduledSubjectIds.has(id)) || 
+      // أو حتى لو مفيش مواد ناقصة لكن ليه مواد مسجلة (يعني موجود)
+      scheduledSubjectIds.size > 0
+    );
 
-  return filtered;
-}, [data, scheduleInfo, filter.date, show]);
+    // أو ببساطة ممكن تعرض كل المدرسين اللي موجودين من data بدون فلترة لو حابب:
+    // const filtered = data;
 
+    return filtered;
+  }, [data, scheduleInfo, filter.date, show]);
 
-  if (!show) {
-    console.log('AssignedTeachersTable: !show → return null');
-    return null;
-  }
+  if (!show) return null;
 
   if (teachersForToday.length === 0) {
-    console.log('AssignedTeachersTable: teachersForToday.length === 0 → show empty message');
     return (
       <div className="mt-6 rounded-xl bg-amber-50 p-5 text-amber-800 shadow-sm">
         <p className="font-medium">No teachers have sessions scheduled for this day.</p>
@@ -85,7 +74,7 @@ export default function AssignedTeachersTable({
               <th className="px-6 py-3 text-left font-medium text-gray-700">Username</th>
               <th className="px-6 py-3 text-left font-medium text-gray-700">Name</th>
               <th className="px-6 py-3 text-left font-medium text-gray-700">Status</th>
-              <th className="px-6 py-3 text-left font-medium text-gray-700">Submitted</th>
+              <th className="px-6 py-3 text-left font-medium text-gray-700">Submitted At</th>
               <th className="px-6 py-3 text-left font-medium text-gray-700">Missing</th>
             </tr>
           </thead>
@@ -106,7 +95,8 @@ export default function AssignedTeachersTable({
                   )}
                 </td>
                 <td className="px-6 py-3 text-gray-600">
-                  {t.submitted ? formatTime(t.submittedAt) : '—'}
+                  {/* عرض التوقيت بشكل جميل */}
+                  {t.submittedAt ? formatTime(t.submittedAt) : '—'}
                 </td>
                 <td className="px-6 py-3">
                   {t.missingSubjects.length > 0 ? (

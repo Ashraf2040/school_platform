@@ -36,7 +36,7 @@ const icons = {
     </svg>
   ),
   close: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
   ),
@@ -68,39 +68,55 @@ export default function Sidebar({ role }: { role: string }) {
 
   return (
     <>
+      {/* Floating Toggle Button */}
       <button
         onClick={toggleSidebar}
-        className={`fixed top-18 z-50 flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 shadow-lg shadow-teal-500/40 text-white transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-teal-300 md:hidden ${
+        className={`fixed top-20 z-50 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 shadow-xl shadow-slate-200/50 text-slate-600 transition-all duration-300 hover:text-teal-600 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-500/20 md:hidden ${
           isRTL ? "left-4" : "right-4"
         }`}
         aria-label="Toggle Menu"
       >
-        {isOpen ? icons.close : icons.menu}
+        <span className="relative flex h-5 w-5">
+          <span className={`absolute inline-flex h-full w-full rounded bg-teal-500 opacity-0 transition-opacity duration-300 ${isOpen ? "opacity-0" : "opacity-100"}`}>
+            {icons.menu}
+          </span>
+          <span className={`relative transform transition-all duration-300 ${isOpen ? "rotate-90 opacity-0" : "rotate-0 opacity-100"}`}>
+            {icons.menu}
+          </span>
+          <span className={`absolute top-0 transform transition-all duration-300 ${isOpen ? "rotate-0 opacity-100" : "rotate-90 opacity-0"}`}>
+            {icons.close}
+          </span>
+        </span>
       </button>
 
+      {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 md:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
+      {/* Sidebar Container */}
       <aside
         className={`
-          fixed inset-y-0 z-50 flex h-full w-72 flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out
+          fixed inset-y-0 z-50 flex h-full w-[280px] flex-col bg-white/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-out
           ${isRTL ? "right-0" : "left-0"}
           ${isOpen ? "translate-x-0" : (isRTL ? "translate-x-full" : "-translate-x-full")}
-          md:relative md:translate-x-0 md:w-72 md:shadow-none md:border-r md:border-slate-100
+          md:static md:translate-x-0 md:w-72 md:bg-transparent md:backdrop-blur-none md:shadow-none md:border-r md:border-slate-100/80
         `}
       >
-        <div className="flex h-20 items-center justify-center border-b border-slate-50 bg-gradient-to-r from-white to-slate-50/50 md:hidden">
+        {/* Mobile Header (Hidden on Desktop) */}
+        <div className="flex h-20 items-center justify-between border-b border-slate-100 px-6 md:hidden">
           <span className="text-xl font-black tracking-tight text-slate-800">
-            {role === "ADMIN" ? "Admin" : "Teacher"}
+            {role === "ADMIN" ? "Admin Panel" : "Teacher Portal"}
           </span>
         </div>
 
-        <div className="flex h-full flex-col overflow-y-auto px-4 py-6">
-          <nav className="space-y-1.5">
+        {/* Scrollable Content Area */}
+        <div className="flex h-full flex-col overflow-y-auto px-3 py-6 md:px-4 md:py-8 hide-scrollbar">
+          
+          <nav className="space-y-2">
             {role === "ADMIN" && (
               <>
                 <SidebarLink
@@ -165,7 +181,7 @@ export default function Sidebar({ role }: { role: string }) {
                       : "تقارير التقييم الاسبوعية"
                   }`}
                 </SidebarLink>
-                <SidebarLink
+                {/* <SidebarLink
                   href="/dashboard/attendanceAdmin"
                   icon={icons.announcements}
                   active={isActive("/dashboard/attendanceAdmin")}
@@ -173,7 +189,7 @@ export default function Sidebar({ role }: { role: string }) {
                   locale={locale}
                 >
                   {`${locale === "en" ? "Attendance" : "الحضور والغياب"}`}
-                </SidebarLink>
+                </SidebarLink> */}
               </>
             )}
 
@@ -231,7 +247,7 @@ export default function Sidebar({ role }: { role: string }) {
                       : "تقارير التقييم الاسبوعية"
                   }`}
                 </SidebarLink>
-                <SidebarLink
+                {/* <SidebarLink
                   href="/dashboard/attendance"
                   icon={icons.announcements}
                   active={isActive("/dashboard/attendance")}
@@ -239,14 +255,14 @@ export default function Sidebar({ role }: { role: string }) {
                   locale={locale}
                 >
                   {`${locale === "en" ? "Attendance" : "الحضور والغياب"}`}
-                </SidebarLink>
+                </SidebarLink> */}
               </>
             )}
 
-            <div className="pt-6">
+            <div className="pt-8 mt-4">
               <div className="relative flex py-2 items-center">
                 <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink-0 mx-2 text-xs text-slate-400 font-medium tracking-wider uppercase">System</span>
+                <span className="flex-shrink-0 mx-3 text-[10px] font-bold text-slate-400 tracking-widest uppercase">System</span>
                 <div className="flex-grow border-t border-slate-200"></div>
               </div>
               <SidebarLink
@@ -262,6 +278,19 @@ export default function Sidebar({ role }: { role: string }) {
           </nav>
         </div>
       </aside>
+      
+      <style jsx global>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .hide-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #e2e8f0;
+          border-radius: 20px;
+        }
+      `}</style>
     </>
   );
 }
@@ -288,36 +317,41 @@ function SidebarLink({
       href={href}
       onClick={onClick}
       className={`
-        group relative flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200
+        group relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200
         ${
           active
-            ? "bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-700 shadow-sm ring-1 ring-teal-100"
-            : "text-slate-600 hover:bg-slate-50/80 hover:text-slate-900"
+            ? "bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-700"
+            : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
         }
       `}
     >
+      {/* Active Indicator Bar */}
+      {active && (
+        <div
+          className={`absolute top-3 bottom-3 w-1 rounded-full bg-gradient-to-b from-teal-400 to-emerald-500 shadow-[0_0_10px_rgba(20,184,166,0.5)] ${
+            isRTL ? "left-0" : "right-0"
+          }`}
+        />
+      )}
+
+      {/* Icon Container */}
       <span
         className={`
-          flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-300 shrink-0
+          flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-300 shrink-0
           ${
             active
-              ? "border-teal-100 bg-white text-teal-600 shadow-md shadow-teal-100"
-              : "border-transparent bg-slate-100/50 text-slate-400 group-hover:bg-white group-hover:text-slate-600 group-hover:shadow-sm"
+              ? "border-teal-100 bg-white text-teal-600 shadow-sm shadow-teal-100"
+              : "border-transparent bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-slate-600 group-hover:shadow-sm"
           }
         `}
       >
         {icon}
       </span>
-      <span className={`truncate ${active ? "font-bold" : ""}`}>
+      
+      {/* Text */}
+      <span className={`relative z-10 ${active ? "font-bold" : ""}`}>
         {children}
       </span>
-      {active && (
-        <div
-          className={`absolute top-3 bottom-3 w-1 rounded-full bg-gradient-to-b from-teal-400 to-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] ${
-            isRTL ? "left-0" : "right-0"
-          }`}
-        />
-      )}
     </Link>
   );
 }

@@ -1,8 +1,9 @@
+// app/api/schedule/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from "@/lib/prisma";
 
 type IncomingSchedule = {
-  [dayIndex: string]: string[]; // array of subject IDs per day
+  [dayIndex: string]: string[]; 
 };
 
 // === GET: Fetch active schedule for a class ===
@@ -69,14 +70,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { classId, schedule, createdBy } = body as {
-    classId: string;
-    schedule: IncomingSchedule;
-    createdBy: string;
-  };
+  const { classId, schedule, createdBy } = body;
 
+  // Validation
   if (!classId || !schedule || !createdBy) {
-    console.log('Missing required fields:', { classId, schedule, createdBy });
+    console.error('Missing required fields');
     return NextResponse.json(
       { error: 'Missing required fields: classId, schedule, createdBy' },
       { status: 400 }
@@ -84,76 +82,86 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Validate class exists
+    // 1. Validate Class Exists
     const classObj = await prisma.class.findUnique({
       where: { id: classId },
       select: { name: true },
     });
 
-    console.log('Class object found:', classObj);
-
     if (!classObj) {
-      console.log('Class not found');
+      console.error('Class not found');
       return NextResponse.json(
         { error: 'Class not found' },
         { status: 404 }
       );
     }
 
-    // Deactivate all active schedules for this class
-    const updatedSchedules = await prisma.schedule.updateMany({
+    // 2. Validate User Exists (Fixes "Foreign Key Constraint" error)
+    // We check if the user exists in the User table.
+    // If you don't have a User table, you must use a different validation or remove this check.
+    const user = await prisma.user.findUnique({
+      where: { id: createdBy },
+      select: { id: true },
+    });
+
+    if (!user) {
+      console.error('User (Creator) not found');
+      return NextResponse.json(
+        { error: 'User (Creator) not found' },
+        { status: 404 }
+      );
+    }
+
+    // 3. Deactivate old schedules for this class
+    await prisma.schedule.updateMany({
       where: { classId, isActive: true },
       data: { isActive: false },
     });
 
-    console.log('Deactivated schedules count:', updatedSchedules.count);
-
-    // Build items to create
+    // 4. Build items to create
+    // Assuming `items` is a flat list of IDs based on the error "Argument 'start' is missing".
+    // If your schema is `items ScheduleItem[]` (One-to-Many), this needs to change.
     const itemsToCreate: any[] = [];
-
     Object.entries(schedule).forEach(([dayIndexStr, subjectIds]) => {
       const dayIndex = parseInt(dayIndexStr, 10);
       if (isNaN(dayIndex) || !Array.isArray(subjectIds)) return;
 
+      // ONLY ADD IDs if the relation expects a list of IDs.
+      // If it expects objects, wrap them: { dayIndex, session: 0, subjectId: { connect: { id: subjectId } } }
       subjectIds.forEach((subjectId) => {
         itemsToCreate.push({
           dayIndex,
           session: 0,
-          subject: { connect: { id: subjectId } },
-          start: '',
-          end: '',
+          start: "08:00",  // قيمة افتراضية مناسبة
+  end: "09:00",
+          subject: { connect: { id: subjectId } }, // Using 'connect' for a relation of IDs
+          // start: '', end: '' // Removed these if they cause issues
         });
       });
     });
 
     console.log('Items to create:', itemsToCreate);
 
-    // Create new active schedule
+    // 5. Create new active schedule
     const newSchedule = await prisma.schedule.create({
       data: {
         classId,
-        name: classObj.name,
+        name: `${classObj.name} Schedule`,
         isActive: true,
-        createdBy,
+        createdBy: user.id, // Use the validated user ID
         items: { create: itemsToCreate },
       },
-      include: {
-        items: {
-          select: { dayIndex: true, subjectId: true },
-        },
-      },
     });
-
-    console.log('New schedule created:', newSchedule);
 
     return NextResponse.json(
       { ok: true, schedule: newSchedule },
       { status: 201 }
     );
+
   } catch (error) {
     console.error('POST /api/schedule error:', error);
     return NextResponse.json(
-      { error: 'Failed to save schedule' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

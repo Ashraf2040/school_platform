@@ -21,6 +21,7 @@ model User {
   faceDescriptor         String?
   phone                  String?
   image                  String?
+  pushSubscription       String?
   announcements          Announcement[]          @relation("AnnouncementsCreated")
   announcementRecipients AnnouncementRecipient[]
   attendances            Attendance[]
@@ -271,8 +272,8 @@ model ScheduleItem {
   scheduleId String
   dayIndex   Int
   session    Int
-  start      String
-  end        String
+  start      String?
+  end        String?
   subjectId  String
   teacherId  String?
   schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)

@@ -35,6 +35,12 @@ type LeaveRequest = {
 // ────────────────────────────────────────────────
 // Office Location Config
 // ────────────────────────────────────────────────
+
+// const OFFICE_LOCATION = {
+//   lat: 21.434370774706004,
+//   lng: 39.79850862505511,
+//   radiusInMeters: 500,
+// };
 const OFFICE_LOCATION = {
   lat: 21.435061627320483,
   lng: 39.77167152505505,
@@ -165,7 +171,7 @@ const FaceVerificationModal: React.FC<FaceVerificationModalProps> = ({
       void startCamera();
       
       return () => {
-        // Stream cleanup handled by the isOpen watcher
+        // Stream cleanup handled by isOpen watcher
       };
     }
   }, [isOpen, status]);
@@ -377,7 +383,7 @@ export default function AttendancePage() {
     if (!session) return;
 
     const fetchWorkShift = async () => {
-      try {
+        try {
         const res = await fetch("/api/admin/work-shift");
         if (res.ok) {
           const data = await res.json();
@@ -389,7 +395,7 @@ export default function AttendancePage() {
     };
 
     const fetchLeaveRequests = async () => {
-      try {
+        try {
         const res = await fetch("/api/leave-request");
         if (res.ok) {
           const data = await res.json();
@@ -401,7 +407,7 @@ export default function AttendancePage() {
     };
 
     const fetchFaceDescriptor = async () => {
-      try {
+        try {
         const res = await fetch("/api/user/me");
         if (res.ok) {
           const data = await res.json();
@@ -592,8 +598,16 @@ export default function AttendancePage() {
 
       if (res.ok) {
         toast.success(data.message);
-        // Set the new state directly from the response
+        // Set the new attendance state
         setAttendance(data.attendance); 
+
+        // --- NEW: Auto Reload on Check Out ---
+        // If the returned attendance object has a checkOut time, user just checked out.
+        if (data.attendance && data.attendance.checkOut) {
+          setTimeout(() => {
+            window.location.reload(); 
+          }, 1500);
+        }
       } else {
         toast.error(data.error || "حدث خطأ");
       }
@@ -606,11 +620,7 @@ export default function AttendancePage() {
     }
   };
 
-  // ────────────────────────────────────────────────
-  // FIXED: onFaceVerified
-  // ────────────────────────────────────────────────
   const onFaceVerified = async () => {
-    // We wrap the geolocation in a Promise to make it awaitable
     const getPosition = (): Promise<GeolocationPosition> => {
       return new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject);
@@ -619,16 +629,9 @@ export default function AttendancePage() {
 
     try {
       const pos = await getPosition();
-      // 1. Wait for the attendance to be saved
       await sendAttendance(pos.coords.latitude, pos.coords.longitude);
-      
-      // 2. AFTER saving, fetch fresh data to ensure UI is synced
       await fetchAttendance();
-      
-      // 3. Close modal is handled by the modal's own logic, 
-      // but we are good here because state is updated.
     } catch (err) {
-      // If geolocation fails during verification, try sending without it
       await sendAttendance(null, null);
       await fetchAttendance();
     }
@@ -692,6 +695,11 @@ export default function AttendancePage() {
     }
   };
 
+  // --- SVG Circular Progress Component Props ---
+  const circleRadius = 60;
+  const circumference = 2 * Math.PI * circleRadius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-4 px-4 sm:px-6 font-arabic">
       <div className="max-w-sm mx-auto w-full bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl overflow-hidden border border-white/50">
@@ -713,7 +721,6 @@ export default function AttendancePage() {
             {session?.user?.email}
           </p>
 
-          {/* ───── NEW: Work Shift Display Under Profile ───── */}
           {workShift && (
             <div className="mt-3 inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 shadow-sm animate-fade-in-down">
               <span className="text-xs font-bold text-white/90">⏰ دوام العمل:</span>
@@ -734,7 +741,6 @@ export default function AttendancePage() {
               </span>
             </div>
           )}
-          {/* ──────────────────────────────────────────────────── */}
         </div>
 
         {/* Main content */}
@@ -780,22 +786,66 @@ export default function AttendancePage() {
           {/* Timer */}
           {attendance && attendance.checkIn && (
             <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100 shadow-lg text-center">
-              <p className="text-indigo-800 text-sm font-bold mb-3 bg-indigo-100 px-3 py-1 rounded-full inline-block">
+              <p className="text-indigo-800 text-sm font-bold mb-4 bg-indigo-100 px-3 py-1 rounded-full inline-block">
                 {timerLabel}
               </p>
+              
               <div className="text-3xl sm:text-4xl font-mono font-bold text-indigo-900 mb-4 tracking-wider">
                 {timerDisplay}
               </div>
 
-              <div className="w-full bg-indigo-200 rounded-full h-3 overflow-hidden shadow-inner">
-                <div
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full shadow-lg transition-all duration-1000 ease-linear"
-                  style={{ width: `${progress}%` }}
-                ></div>
+              {/* ───────────────────────────────────────────────────────────── */}
+              {/* NEW: Circular Progress Ring */}
+              {/* ───────────────────────────────────────────────────────────── */}
+              <div className="relative w-48 h-48 mx-auto flex items-center justify-center">
+                {/* Background Circle */}
+                <svg
+                  className="transform -rotate-90 w-full h-full drop-shadow-xl"
+                  width="192"
+                  height="192"
+                  viewBox="0 0 192 192"
+                >
+                  <circle
+                    cx="96"
+                    cy="96"
+                    r={circleRadius}
+                    fill="none"
+                    stroke="#e0e7ff" // light indigo background
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                  />
+                  {/* Foreground Circle (Progress) */}
+                  <circle
+                    cx="96"
+                    cy="96"
+                    r={circleRadius}
+                    fill="none"
+                    stroke="url(#gradient)" // Gradient stroke
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                    className="transition-all duration-1000 ease-linear"
+                  />
+                  {/* Gradient Definition */}
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#6366f1" /> {/* Indigo 500 */}
+                      <stop offset="100%" stopColor="#9333ea" /> {/* Purple 600 */}
+                    </linearGradient>
+                  </defs>
+                </svg>
+                
+                {/* Percentage Text */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-indigo-900">
+                  <span className="text-4xl font-bold">{Math.round(progress)}%</span>
+                  <span className="text-xs font-semibold text-indigo-500 mt-1">مكتمل</span>
+                </div>
               </div>
+              {/* ───────────────────────────────────────────────────────────── */}
 
               {workShift && isCheckedIn && (
-                <p className="text-xs text-indigo-600 mt-3 font-medium">
+                <p className="text-xs text-indigo-600 mt-4 font-medium">
                   نهاية الدوام: {workShift.endTime
                     ? new Date(workShift.endTime).toLocaleTimeString([], {
                         hour: "2-digit",
@@ -915,7 +965,7 @@ export default function AttendancePage() {
         {leaveRequests.length > 0 && (
           <div className="border-t border-gray-100/50 p-4 sm:p-6 pb-6">
             <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span className="text-2xl">📚</span>
+              <span className="text-2xl">📋</span>
               طلبات الاستئذان السابقة
             </h2>
             <div className="space-y-3 max-h-60 overflow-y-auto -mx-2 sm:-mx-4 px-2 sm:px-4 pb-2">

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -9,14 +8,14 @@ type TeacherAttendance = {
   id: string;
   name: string;
   email: string;
-  isPresent: boolean;
+  isPresent: boolean; // We will ignore this from DB and calculate dynamically
   checkIn?: string;
   checkOut?: string | null;
 };
 
 type LeaveRequest = {
   id: string;
-  teacher: { name: string; email: string };
+  teacher: { name: string; email: string; phone?: string }; // Added phone for notification logic context
   leaveDate: string;
   leaveTime: string;
   reason: string;
@@ -31,7 +30,13 @@ type WorkShift = {
   endTime?: string | null;
 };
 
-// --- Helpers (Fixed to accept null) ---
+// --- Helpers ---
+const getTodayDateString = () => {
+  const date = new Date();
+  // Returns YYYY-MM-DD in local time for accurate comparison
+  return date.toLocaleDateString("en-CA");
+};
+
 const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleString("ar-EG", {
@@ -76,7 +81,6 @@ export default function AdminDashboard() {
     fetchData();
     fetchWorkShift();
 
-    // AUTO-REFRESH: Fetch data every 10 seconds
     const interval = setInterval(() => {
       fetchData();
     }, 10000);
@@ -84,7 +88,6 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Handle Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSelectedRequest(null);
@@ -102,9 +105,6 @@ export default function AdminDashboard() {
         const data = await res.json();
         setTeachers(data.teachers || []);
         setLeaveRequests(data.leaveRequests || []);
-      } else {
-        // Don't show toast on auto-refresh errors, only manual
-        // toast.error("فشل تحميل البيانات");
       }
     } catch (error) {
       console.error(error);
@@ -135,7 +135,6 @@ export default function AdminDashboard() {
       toast.error("الرجاء إدخال وقت بداية الدوام");
       return;
     }
-
     setShiftLoading(true);
     try {
       const res = await fetch("/api/admin/work-shift", {
@@ -167,6 +166,7 @@ export default function AdminDashboard() {
 
     setDecisionLoading(true);
     try {
+      // This API call triggers the backend to send WhatsApp/Messenger notifications
       const res = await fetch("/api/admin/leave-request", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(status === "APPROVED" ? "تم قبول الطلب" : "تم رفض الطلب");
+        toast.success(status === "APPROVED" ? "تم قبول الطلب وإرسال الإشعار" : "تم رفض الطلب وإرسال الإشعار");
         closeModal();
         fetchData(); 
       } else {
@@ -198,111 +198,129 @@ export default function AdminDashboard() {
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      closeModal();
-    }
+    if (e.target === e.currentTarget) closeModal();
   };
 
-  // Calculations for Stats
-  const totalTeachers = teachers.length;
-  const presentTeachers = teachers.filter(t => t.isPresent).length;
-  const absentTeachers = totalTeachers - presentTeachers;
+  // --- Dynamic Filtering ---
+  const today = getTodayDateString();
+  
+  // Logic to fix the glitch: Only mark as present if checkIn date matches TODAY
+  const presentTeachers = teachers.filter(t => 
+    t.checkIn && t.checkIn.startsWith(today)
+  );
+  
+  const absentTeachers = teachers.filter(t => 
+    !(t.checkIn && t.checkIn.startsWith(today))
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* --- Header --- */}
-      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">لوحة الإدارة</h1>
-            <p className="text-slate-500 text-sm">إدارة الحضور والاستئذانات</p>
-          </div>
-          <button 
-            onClick={fetchData}
-            className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg transition font-medium text-sm"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
-            تحديث البيانات
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen w-full bg-slate-50 text-slate-900 font-sans">
+      
+      {/* ================= BACKGROUND ================= */}
+      <div className="fixed inset-0 -z-10 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-teal-50/40 to-transparent opacity-70" />
+        <svg className="absolute inset-0 w-full h-full opacity-[0.25]">
+          <defs>
+            <pattern id="att-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="1" fill="#0f766e" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#att-grid)" />
+        </svg>
+      </div>
 
-      <main className="w-full mx-auto p-6 space-y-8">
+      <div className="w-full px-6 lg:px-10 py-8 space-y-8">
         
-        {/* --- Stats Cards --- */}
+        {/* --- Header --- */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200/50">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+              لوحة الإدارة
+            </h1>
+            <p className="text-slate-500 mt-1">إدارة الحضور اليومي وطلبات الاستئذان</p>
+          </div>
+          <div className="flex items-center gap-3">
+             <button 
+              onClick={fetchData}
+              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 transition font-medium text-sm shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              تحديث البيانات
+            </button>
+          </div>
+        </header>
+
+        {/* --- Stats Cards (Full Width) --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-sm hover:shadow-md transition">
             <div className="text-slate-500 text-sm font-medium mb-1">إجمالي المعلمين</div>
-            <div className="text-3xl font-bold text-slate-800">{totalTeachers}</div>
+            <div className="text-3xl font-bold text-slate-800">{teachers.length}</div>
           </div>
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-sm hover:shadow-md transition flex items-center justify-between">
             <div>
-              <div className="text-green-600 text-sm font-medium mb-1">حضور اليوم</div>
-              <div className="text-3xl font-bold text-slate-800">{presentTeachers}</div>
+              <div className="text-emerald-600 text-sm font-medium mb-1">حضور اليوم</div>
+              <div className="text-3xl font-bold text-slate-800">{presentTeachers.length}</div>
             </div>
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-600">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-sm hover:shadow-md transition flex items-center justify-between">
             <div>
-              <div className="text-red-600 text-sm font-medium mb-1">غياب اليوم</div>
-              <div className="text-3xl font-bold text-slate-800">{absentTeachers}</div>
+              <div className="text-rose-600 text-sm font-medium mb-1">غياب اليوم</div>
+              <div className="text-3xl font-bold text-slate-800">{absentTeachers.length}</div>
             </div>
-            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-600">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center text-rose-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           
-          {/* --- Main Content (Left) --- */}
-          <div className="lg:col-span-2 space-y-8">
+          {/* --- Left Column (Tables) --- */}
+          <div className="xl:col-span-2 space-y-6">
             
-            {/* Teachers Table */}
-            <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-5 border-b border-slate-100 flex justify-between items-center">
-                <h2 className="text-lg font-bold text-slate-800">حضور المعلمين اليوم</h2>
-                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">{new Date().toLocaleDateString("ar-EG")}</span>
+            {/* --- Present Teachers Table --- */}
+            <section className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-sm border border-white/60 overflow-hidden">
+              <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-emerald-50/30">
+                <h2 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  حضور اليوم
+                </h2>
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-md">
+                  {new Date().toLocaleDateString("ar-EG")}
+                </span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-right">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
+                    <tr className="bg-slate-50/50 text-slate-500 text-xs uppercase font-semibold">
                       <th className="px-6 py-4">المعلم</th>
-                      <th className="px-6 py-4">الحالة</th>
                       <th className="px-6 py-4">وقت الحضور</th>
                       <th className="px-6 py-4">وقت الانصراف</th>
+                      <th className="px-6 py-4">الحالة</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {teachers.length > 0 ? teachers.map((t) => (
-                      <tr key={t.id} className="hover:bg-slate-50/50 transition">
+                    {presentTeachers.length > 0 ? presentTeachers.map((t) => (
+                      <tr key={t.id} className="hover:bg-emerald-50/30 transition">
                         <td className="px-6 py-4">
                           <div className="font-medium text-slate-900">{t.name}</div>
-                          <div className="text-xs text-slate-500">{t.email}</div>
+                          <div className="text-xs text-slate-400">{t.email}</div>
                         </td>
+                        <td className="px-6 py-4 text-sm text-slate-600 font-mono font-medium">{extractTime(t.checkIn)}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600 font-mono">{extractTime(t.checkOut)}</td>
                         <td className="px-6 py-4">
-                          {t.isPresent ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                              حاضر
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                              غائب
-                            </span>
-                          )}
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+                            حاضر
+                          </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-600 font-mono">{formatDate(t.checkIn)}</td>
-                        {/* Error was here: formatDate expected string | undefined but t.checkOut is string | null. Now it accepts null */}
-                        <td className="px-6 py-4 text-sm text-slate-600 font-mono">{formatDate(t.checkOut)}</td>
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500 text-sm">
-                          لا توجد بيانات للعرض
+                        <td colSpan={4} className="px-6 py-12 text-center text-slate-400 text-sm bg-slate-50/50">
+                          لا يوجد حضور مسجل لليوم بعد
                         </td>
                       </tr>
                     )}
@@ -311,9 +329,60 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* Work Shift Settings */}
-            <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h2 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">إعدادات دوام اليوم</h2>
+            {/* --- Absent Teachers Table --- */}
+            <section className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-sm border border-white/60 overflow-hidden">
+              <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-rose-50/30">
+                <h2 className="text-lg font-bold text-rose-900 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                  غياب اليوم
+                </h2>
+                <span className="text-xs font-bold text-rose-700 bg-rose-100 px-2 py-1 rounded-md">
+                  {new Date().toLocaleDateString("ar-EG")}
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead>
+                    <tr className="bg-slate-50/50 text-slate-500 text-xs uppercase font-semibold">
+                      <th className="px-6 py-4">المعلم</th>
+                      <th className="px-6 py-4">آخر حضور</th>
+                      <th className="px-6 py-4">الحالة</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {absentTeachers.length > 0 ? absentTeachers.map((t) => (
+                      <tr key={t.id} className="hover:bg-rose-50/30 transition">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-slate-900">{t.name}</div>
+                          <div className="text-xs text-slate-400">{t.email}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-400 font-mono">
+                          {t.checkIn ? extractTime(t.checkIn) : "سجل جديد"}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                            غائب
+                          </span>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={3} className="px-6 py-12 text-center text-slate-400 text-sm bg-slate-50/50">
+                          جميع المعلمين حاضرون 🎉
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {/* --- Work Shift Settings --- */}
+            <section className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/60 p-6">
+              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                إعدادات دوام اليوم
+              </h2>
               <div className="flex flex-col md:flex-row gap-4 items-end">
                 <div className="flex-1 w-full">
                   <label className="block text-sm font-medium text-slate-700 mb-2">بداية الدوام</label>
@@ -321,7 +390,7 @@ export default function AdminDashboard() {
                     type="time"
                     value={shiftStart}
                     onChange={(e) => setShiftStart(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    className="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition bg-white/80"
                   />
                 </div>
                 <div className="flex-1 w-full">
@@ -330,29 +399,29 @@ export default function AdminDashboard() {
                     type="time"
                     value={shiftEnd}
                     onChange={(e) => setShiftEnd(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    className="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition bg-white/80"
                   />
                 </div>
                 <button
                   onClick={saveWorkShift}
                   disabled={shiftLoading}
-                  className="w-full md:w-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-sm"
+                  className="w-full md:w-auto px-8 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition disabled:opacity-50 shadow-md shadow-teal-200"
                 >
-                  {shiftLoading ? "حفظ..." : "حفظ"}
+                  {shiftLoading ? "جاري الحفظ..." : "حفظ"}
                 </button>
               </div>
               {workShift && (
-                <p className="text-xs text-slate-500 mt-4 flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <p className="text-xs text-slate-400 mt-4 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   آخر تحديث: {new Date(workShift.date).toLocaleDateString("ar-EG")}
                 </p>
               )}
             </section>
           </div>
 
-          {/* --- Sidebar (Right) --- */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-full">
+          {/* --- Sidebar (Requests) --- */}
+          <div className="xl:col-span-1">
+            <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-sm border border-white/60 p-6 h-full sticky top-4">
               <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center justify-between">
                 <span>طلبات الاستئذان</span>
                 {leaveRequests.length > 0 && (
@@ -365,7 +434,7 @@ export default function AdminDashboard() {
                   {leaveRequests.map((req) => (
                     <div 
                       key={req.id} 
-                      className="group relative p-4 rounded-lg border border-amber-100 bg-amber-50/50 hover:bg-white hover:shadow-md transition-all cursor-pointer border-l-4 border-l-amber-400"
+                      className="group relative p-4 rounded-xl border border-amber-100 bg-amber-50/30 hover:bg-white hover:shadow-md hover:border-amber-200 transition-all cursor-pointer border-l-4 border-l-amber-400"
                       onClick={() => setSelectedRequest(req)}
                     >
                       <div className="flex justify-between items-start mb-2">
@@ -373,25 +442,25 @@ export default function AdminDashboard() {
                         <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">معلق</span>
                       </div>
                       <div className="space-y-1 text-xs text-slate-600">
-                        <p className="flex items-center gap-1"><svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> {new Date(req.leaveDate).toLocaleDateString("ar-EG")}</p>
-                        <p className="flex items-center gap-1"><svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> {req.leaveTime}</p>
+                        <p className="flex items-center gap-1"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> {new Date(req.leaveDate).toLocaleDateString("ar-EG")}</p>
+                        <p className="flex items-center gap-1"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> {req.leaveTime}</p>
                         <p className="text-slate-800 line-clamp-1">"{req.reason}"</p>
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-white/90 transition backdrop-blur-sm rounded-lg">
-                        <span className="text-blue-600 font-bold text-sm">مراجعة الطلب</span>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-white/95 transition backdrop-blur-sm rounded-xl">
+                        <span className="text-teal-600 font-bold text-sm">مراجعة الطلب</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10 text-slate-400 text-sm bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                <div className="text-center py-10 text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
                   لا توجد طلبات معلقة
                 </div>
               )}
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* --- Modal --- */}
       {selectedRequest && (
@@ -406,7 +475,7 @@ export default function AdminDashboard() {
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-xl font-bold text-slate-900">إدارة طلب الاستئذان</h3>
               <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             
@@ -439,7 +508,7 @@ export default function AdminDashboard() {
                 <textarea
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-slate-500 outline-none transition text-sm"
+                  className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-teal-500 outline-none transition text-sm bg-white"
                   rows={3}
                   placeholder="اكتب ملاحظاتك هنا..."
                 />
@@ -450,23 +519,23 @@ export default function AdminDashboard() {
               <button
                 onClick={closeModal}
                 disabled={decisionLoading}
-                className="px-4 py-2 text-slate-700 font-medium hover:bg-slate-200 rounded-lg transition text-sm"
+                className="px-4 py-2 text-slate-700 font-medium hover:bg-slate-200 rounded-xl transition text-sm"
               >
                 إلغاء
               </button>
               <button
                 onClick={() => handleDecision("REJECTED")}
                 disabled={decisionLoading}
-                className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition text-sm shadow-sm"
+                className="px-4 py-2 bg-rose-600 text-white font-medium rounded-xl hover:bg-rose-700 transition text-sm shadow-sm"
               >
                 رفض
               </button>
               <button
                 onClick={() => handleDecision("APPROVED")}
                 disabled={decisionLoading}
-                className="px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition text-sm shadow-sm"
+                className="px-4 py-2 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition text-sm shadow-sm"
               >
-                موافقة
+                {decisionLoading ? "جاري الإرسال..." : "موافقة"}
               </button>
             </div>
           </div>

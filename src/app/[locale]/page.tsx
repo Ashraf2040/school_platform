@@ -27,53 +27,70 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen  text-slate-900 relative overflow-hidden">
-      {/* Background - Green subtle grid */}
+    <div className="min-h-screen text-slate-900 relative overflow-hidden selection:bg-emerald-200 selection:text-emerald-900 bg-slate-50">
+      
+      {/* ENHANCED BACKGROUND */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute inset-0 bg-white" />
-        <svg className="absolute inset-0 w-full h-full opacity-40">
+        {/* Radial Glow - tightened height to focus on center */}
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-emerald-100/40 rounded-full blur-[80px] opacity-70" />
+        
+        {/* The Grid */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.35]">
           <defs>
-            <pattern id="soft-green-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#16a34a" strokeWidth="1" />
+            <pattern id="soft-green-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="1" fill="#16a34a" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#soft-green-grid)" />
         </svg>
-        <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/40 to-transparent" />
+        
+        {/* Bottom Fade */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/90" />
       </div>
 
-      {/* Header / Navbar */}
-      <header className="sticky top-0 z-20 bg-gradient-to-b from-emerald-100/90 to-white/90 backdrop-blur-md border-b border-emerald-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-extrabold text-lg">
+      {/* HEADER: Seamless Blend with Background */}
+      <header className="sticky top-0 z-50 transition-all duration-300 bg-slate-50/70 backdrop-blur-md border-b border-emerald-100/30">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white flex items-center justify-center font-extrabold text-base shadow-lg group-hover:scale-105 transition-transform duration-300">
               SM
             </div>
             <div>
-              <p className="font-semibold leading-tight">{t("logoTitle")}</p>
-              <p className="text-xs text-slate-600">{t("logoSubtitle")}</p>
+              <p className="font-bold text-slate-800 leading-tight tracking-tight text-sm">{t("logoTitle")}</p>
+              <p className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold">{t("logoSubtitle")}</p>
             </div>
           </Link>
 
           <button
             onClick={handleGetStarted}
-            className="rounded-full px-6 py-2.5 font-medium text-white bg-emerald-700 hover:bg-emerald-800 transition"
+            className="relative overflow-hidden rounded-full px-6 py-2 text-sm font-semibold text-white bg-emerald-700 hover:bg-emerald-800 shadow-md hover:shadow-emerald-300 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 group"
           >
-            {session?.user ? t("ctaSignedIn") : t("ctaSignedOut")}
+            <span className="relative z-10">{session?.user ? t("ctaSignedIn") : t("ctaSignedOut")}</span>
+            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-0" />
           </button>
         </div>
       </header>
 
       {/* ================= HERO ================= */}
       <main className="relative z-10">
-        <div className="max-w-[1440px] mx-auto px-6 py-16 lg:py-32 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left - Text */}
-          <div className="space-y-8 text-center lg:text-left">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+        <div className="max-w-[1440px] mx-auto px-6 py-8 lg:py-10 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          
+          {/* Left - Text Content */}
+          <div className="space-y-6 text-center lg:text-left animate-fade-up">
+            {/* Small Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-200 text-emerald-800 text-[10px] font-semibold uppercase tracking-wide">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              {"Live Preview"}
+            </div>
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.15] tracking-tight text-slate-900">
               {locale === "en" ? (
                 <>
-                  <span className="text-7xl bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-cyan-400 to-orange-500 animate-gradient-x">
-                    O
+                  <span className="relative inline-block">
+                    <span className="absolute inset-0 bg-gradient-to-r from-emerald-300 to-cyan-300 blur-lg opacity-40 animate-pulse"></span>
+                    <span className="relative bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 animate-gradient-x">
+                      O
+                    </span>
                   </span>
                   {t("heroTitle")}
                 </>
@@ -82,55 +99,104 @@ export default function HomePage() {
               )}
             </h1>
 
-            <p className="text-lg md:text-xl text-slate-700 max-w-xl mx-auto lg:mx-0">
+            <p className="text-base md:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
               {t("heroSubtitle")}
             </p>
 
-            <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+            <div className="flex flex-wrap gap-3 justify-center lg:justify-start pt-1">
               <button
                 onClick={handleGetStarted}
-                className="rounded-xl px-8 py-4 text-lg font-semibold text-white bg-emerald-700 hover:bg-emerald-800 shadow-lg transition"
+                className="relative rounded-xl px-6 py-3 text-base font-bold text-white bg-emerald-700 hover:bg-emerald-800 shadow-lg shadow-emerald-200 hover:shadow-emerald-300 transition-all duration-300 hover:-translate-y-0.5"
               >
                 {t("heroPrimary")}
               </button>
 
-              <button className="rounded-xl px-8 py-4 text-lg font-semibold border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 transition">
+              <button className="group rounded-xl px-6 py-3 text-base font-bold border-2 border-slate-200 text-slate-700 hover:border-emerald-300 hover:text-emerald-700 hover:bg-white transition-all duration-300 flex items-center gap-2">
                 {t("heroSecondary")}
+                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
               </button>
+            </div>
+            
+            {/* Social Proof */}
+            <div className="pt-6 flex items-center justify-center lg:justify-start gap-4 text-slate-400 text-xs font-medium">
+              <p>Trusted by:</p>
+              <div className="flex gap-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                 <span className="font-serif text-base">Cognia</span>
+                 <span className="font-mono text-base">AdvancED</span>
+                 <span className="font-sans font-bold text-base">HMH</span>
+              </div>
             </div>
           </div>
 
-          {/* Right - Fake Dashboard Preview */}
-          <div className="relative hidden lg:block animate-fade-up delay-200">
-            <div className="rounded-3xl bg-white border border-emerald-300/60 shadow-2xl overflow-hidden">
-              <div className="h-10 bg-gradient-to-r from-emerald-100 to-emerald-50 flex items-center px-4 gap-2">
-                <div className="h-3 w-3 bg-red-500 rounded-full" />
-                <div className="h-3 w-3 bg-yellow-400 rounded-full" />
-                <div className="h-3 w-3 bg-green-500 rounded-full" />
+          {/* Right - Dashboard Preview */}
+          <div className="relative hidden lg:block perspective-1000">
+            <div className="absolute -inset-3 bg-gradient-to-tr from-emerald-200 to-cyan-100 rounded-[2rem] blur-xl opacity-40 animate-pulse" />
+            
+            <div className="relative rounded-[1.5rem] bg-slate-900 border-4 border-white/80 shadow-2xl overflow-hidden animate-float transform transition-transform hover:scale-[1.01] duration-500">
+              {/* Browser Bar */}
+              <div className="h-10 bg-slate-900 border-b border-slate-800 flex items-center px-5 gap-2">
+                <div className="flex gap-1.5">
+                  <div className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
+                </div>
+                <div className="ml-3 h-5 w-56 rounded bg-slate-800/50 border border-slate-700/50 text-[10px] text-slate-500 flex items-center px-2 font-mono">
+                  dashboard.school-management.com
+                </div>
               </div>
-              <div className="relative">
+              
+              {/* Image Container - Changed Aspect Ratio to 4/3 to fit viewport */}
+              <div className="relative w-full  bg-white overflow-hidden group">
                 <img
                   src="/hero3.jpg"
                   alt="School Management Dashboard Preview"
-                  className="w-full h-[380px] md:h-[460px] object-cover"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent pointer-events-none" />
+                
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none z-10" />
+                
+                <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-emerald-100 flex items-center gap-3 animate-bounce-slow">
+                  <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-sm">✓</div>
+                  <div>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase">System Status</p>
+                    <p className="text-xs font-bold text-slate-800">All systems operational</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* ================= FEATURES ================= */}
-        <section className="max-w-7xl mx-auto px-6 py-20 lg:py-28">
-          <div className="grid md:grid-cols-3 gap-8">
+        <section className="max-w-7xl mx-auto px-6 py-12 lg:py-16">
+
+
+          <div className="grid md:grid-cols-3 gap-6">
             {features.map((f, i) => (
               <div
                 key={i}
-                className="group rounded-3xl bg-white/70 backdrop-blur-sm border border-emerald-200 p-8 hover:border-emerald-400 hover:shadow-xl transition-all duration-400 hover:-translate-y-2"
+                className="group relative bg-white/60 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500 hover:-translate-y-2 overflow-hidden"
+                style={{ animationDelay: `${i * 150}ms` }}
               >
-                <div className="text-5xl mb-6">{f.icon}</div>
-                <h3 className="text-xl font-bold mb-3 text-emerald-800">{f.title}</h3>
-                <p className="text-slate-700">{f.desc}</p>
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-50 to-cyan-50 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-0" />
+                
+                <div className="relative z-10">
+                  <div className="mb-4 w-12 h-12 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-emerald-200 transition-all duration-300">
+                    {f.icon}
+                  </div>
+                  
+                  <h3 className="text-lg font-bold mb-2 text-slate-900 group-hover:text-emerald-700 transition-colors">
+                    {f.title}
+                  </h3>
+                  
+                  <p className="text-sm text-slate-600 leading-relaxed group-hover:text-slate-700">
+                    {f.desc}
+                  </p>
+
+                  <div className="mt-4 flex items-center text-xs font-semibold text-emerald-600 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                    Learn more <span className="ml-1">→</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -139,13 +205,30 @@ export default function HomePage() {
 
       <style jsx global>{`
         @keyframes fade-up {
-          from { opacity: 0; transform: translateY(30px); }
+          from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-up {
-          animation: fade-up 0.8s ease-out forwards;
+          animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .delay-200 { animation-delay: 0.2s; }
+
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0px); }
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 3s ease-in-out infinite;
+        }
+
         @keyframes gradient-x {
           0%   { background-position: 0% 50%; }
           50%  { background-position: 100% 50%; }
@@ -153,7 +236,11 @@ export default function HomePage() {
         }
         .animate-gradient-x {
           background-size: 200% 200%;
-          animation: gradient-x 12s ease infinite;
+          animation: gradient-x 8s ease infinite;
+        }
+
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
         }
       `}</style>
     </div>
