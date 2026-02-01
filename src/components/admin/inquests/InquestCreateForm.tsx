@@ -1,6 +1,3 @@
-
-
-
 "use client";
 
 import { useEffect } from "react";
@@ -15,6 +12,7 @@ export type FormState = {
   teacherSpecialty: string;
   teacherSchool: string;
   clarificationRequest: string;
+  negligenceDate?: string;
   absenceDate?: string;
 };
 
@@ -46,31 +44,25 @@ export function InquestCreateForm({
   onCancel,
 }: Props) {
   const t = useTranslations("InquestCreateForm");
-console.log(filterTeacherId)
-const locale = useLocale();
-  /* ---------------- Auto-fill teacher profile ---------------- */
+  const locale = useLocale();
+
+  // Auto-fill teacher profile when teacher is selected
   useEffect(() => {
     if (filterTeacherId) {
       const teacher = teachers.find((t) => t.id === filterTeacherId);
-      console.log(teacher)
       if (teacher) {
         setForm((prev) => ({
           ...prev,
-          // 1. Job Title comes from teacher.role
-      
-          
-          // 2. Specialty comes from teacher.subject
-          // Ensure your Teacher type definition includes the 'subject' property
-          teacherSpecialty: teacher.specialty || "", 
-          
-          // 3. School is fixed
+          teacherSpecialty: teacher.specialty || "",
           teacherSchool: "Alforqan American Division",
+          // Uncomment if you want to auto-fill job title too
+          // teacherJobTitle: teacher.role || "",
         }));
       }
     }
   }, [filterTeacherId, teachers, setForm]);
 
-  /* ---------------- Auto-fill reason for absence ---------------- */
+  // Auto-fill reason for ABSENT type
   useEffect(() => {
     if (form.inquestType === "ABSENT" && form.absenceDate) {
       const date = new Date(form.absenceDate);
@@ -87,13 +79,22 @@ const locale = useLocale();
     }
   }, [form.inquestType, form.absenceDate, setForm, t]);
 
+  // Clear the date from the other type when inquest type changes
+  useEffect(() => {
+    setForm((prev) => {
+      if (form.inquestType === "ABSENT") {
+        return { ...prev, negligenceDate: undefined };
+      } else {
+        return { ...prev, absenceDate: undefined };
+      }
+    });
+  }, [form.inquestType, setForm]);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-slate-900">
-          {t("title")}
-        </h2>
+        <h2 className="text-xl font-semibold text-slate-900">{t("title")}</h2>
         <button
           type="button"
           onClick={onCancel}
@@ -165,23 +166,32 @@ const locale = useLocale();
           </select>
         </div>
 
-        {/* Absence Date */}
-        {form.inquestType === "ABSENT" && (
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              {t("absenceDate")} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={form.absenceDate ?? ""}
-              onChange={(e) =>
-                setForm({ ...form, absenceDate: e.target.value })
-              }
-              required
-              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
-            />
-          </div>
-        )}
+        {/* Date – now correctly bound to the right field */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            {form.inquestType === "ABSENT"
+              ? t("absenceDate")
+              : t("incidentDate") || "Date of incident / negligence"}
+            <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            value={
+              form.inquestType === "ABSENT"
+                ? form.absenceDate ?? ""
+                : form.negligenceDate ?? ""
+            }
+            onChange={(e) => {
+              const value = e.target.value;
+              setForm((prev) => ({
+                ...prev,
+                [form.inquestType === "ABSENT" ? "absenceDate" : "negligenceDate"]: value,
+              }));
+            }}
+            required
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition"
+          />
+        </div>
 
         {/* Reason */}
         <div>
@@ -201,9 +211,7 @@ const locale = useLocale();
             }`}
           />
           {form.inquestType === "ABSENT" && !!form.absenceDate && (
-            <p className="mt-1 text-xs text-slate-500">
-              {t("autoReasonHint")}
-            </p>
+            <p className="mt-1 text-xs text-slate-500">{t("autoReasonHint")}</p>
           )}
         </div>
 
@@ -228,13 +236,13 @@ const locale = useLocale();
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                {` ${locale === "en" ? "Teacher" : " معلم"}`}
+                {locale === "en" ? "Teacher" : "معلم"}
               </label>
               <input
                 type="text"
-                value={` ${locale === "en" ? "Teacher" : " معلم"}`}
-            
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                value={locale === "en" ? "Teacher" : "معلم"}
+                readOnly
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm bg-slate-50"
               />
             </div>
 

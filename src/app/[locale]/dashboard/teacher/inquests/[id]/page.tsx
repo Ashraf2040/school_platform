@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 type Inquest = {
+  date: string | number | Date;
   id: string;
   inquestType: "ABSENT" | "NEGLIGENCE";
   reason: string;
@@ -30,16 +31,12 @@ export default function TeacherInquestDetail() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-
   const [inquest, setInquest] = useState<Inquest | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [pending, setPending] = useState(false);
   const [form, setForm] = useState({ teacherClarification: "" });
   const [file, setFile] = useState<File | null>(null);
 
-  // =========================
-  // Load Inquest
-  // =========================
   useEffect(() => {
     const loadInquest = async () => {
       try {
@@ -60,7 +57,7 @@ export default function TeacherInquestDetail() {
           setShowForm(true);
         }
 
-        // Mark notification as read
+   
         await fetch("/api/notifications/mark-read", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -82,9 +79,7 @@ export default function TeacherInquestDetail() {
     router.push("/dashboard/teacher/inquests");
   };
 
-  // =========================
-  // Submit Response
-  // =========================
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inquest) return;
@@ -94,7 +89,7 @@ export default function TeacherInquestDetail() {
     try {
       let attachmentUrl = inquest.attachmentUrl;
 
-      // -------- Upload file --------
+      
       if (file) {
         console.log("📤 Uploading file:", file.name, file.type, file.size);
 
@@ -146,9 +141,7 @@ export default function TeacherInquestDetail() {
     }
   };
 
-  // =========================
-  // Loading state
-  // =========================
+ 
   if (!inquest) {
     return (
       <div className="mx-auto max-w-6xl py-10 px-6">
@@ -218,34 +211,53 @@ export default function TeacherInquestDetail() {
 
         <div className="p-6 space-y-8">
           {/* Teacher Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
-            <div>
-              <span className="font-semibold text-slate-700">Academic Year:</span>
-              <p className="mt-1 text-slate-900">{inquest.academicYear.name}</p>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-700">Issued By:</span>
-              <p className="mt-1 text-slate-900">{inquest.createdBy.name}</p>
-            </div>
-            {inquest.teacherJobTitle && (
-              <div>
-                <span className="font-semibold text-slate-700">Job Title:</span>
-                <p className="mt-1 text-slate-900" dir="auto">{inquest.teacherJobTitle}</p>
-              </div>
-            )}
-            {inquest.teacherSpecialty && (
-              <div>
-                <span className="font-semibold text-slate-700">Specialty:</span>
-                <p className="mt-1 text-slate-900" dir="auto">{inquest.teacherSpecialty}</p>
-              </div>
-            )}
-            {inquest.teacherSchool && (
-              <div>
-                <span className="font-semibold text-slate-700">School:</span>
-                <p className="mt-1 text-slate-900" dir="auto">{inquest.teacherSchool}</p>
-              </div>
-            )}
-          </div>
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
+  <div>
+    <span className="font-semibold text-slate-700">Academic Year / السنة الدراسية:</span>
+    <p className="mt-1 text-slate-900">{inquest.academicYear.name}</p>
+  </div>
+
+  <div>
+    <span className="font-semibold text-slate-700">Issued By / صدر من:</span>
+    <p className="mt-1 text-slate-900">{inquest.createdBy.name}</p>
+  </div>
+
+  {/* Date of Negligence – only for NEGLIGENCE type */}
+  {inquest.inquestType === "NEGLIGENCE" && inquest.date && (
+    <div>
+      <span className="font-semibold text-slate-700">Date of Negligence / تاريخ الإهمال:</span>
+      <p className="mt-1 text-slate-900">
+        {new Date(inquest.date).toLocaleDateString("ar-SA", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}
+      </p>
+    </div>
+  )}
+
+  {inquest.teacherJobTitle && (
+    <div>
+      <span className="font-semibold text-slate-700">Job Title / الوظيفة:</span>
+      <p className="mt-1 text-slate-900" dir="auto">{inquest.teacherJobTitle}</p>
+    </div>
+  )}
+
+  {inquest.teacherSpecialty && (
+    <div>
+      <span className="font-semibold text-slate-700">Specialty / التخصص:</span>
+      <p className="mt-1 text-slate-900" dir="auto">{inquest.teacherSpecialty}</p>
+    </div>
+  )}
+
+  {inquest.teacherSchool && (
+    <div>
+      <span className="font-semibold text-slate-700">School / المدرسة:</span>
+      <p className="mt-1 text-slate-900" dir="auto">{inquest.teacherSchool}</p>
+    </div>
+  )}
+</div>
 
           {/* Clarification Request */}
           {(inquest.reason || inquest.details || inquest.clarificationRequest) && (

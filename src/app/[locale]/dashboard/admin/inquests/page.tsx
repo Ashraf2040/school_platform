@@ -181,39 +181,67 @@ export default function AdminInquestsPage() {
   }, [allInquests, filterYearId, filterTeacherId, filterMonth, filterStatus]);
 const handlePreview = () => setShowPDFPreview(true);
   /* ---------------- Create Inquest ---------------- */
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+ const handleCreateSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!filterTeacherId || !filterYearId) {
-      toast.error(t("errors.selectYearTeacher"));
-      return;
+  if (!filterTeacherId || !filterYearId) {
+    toast.error(t("errors.selectYearTeacher"));
+    return;
+  }
+
+  // ← Add this: determine which date to send
+  const eventDate =
+    form.inquestType === "ABSENT" ? form.absenceDate : form.negligenceDate;
+
+  // Optional: extra safety check
+  if (!eventDate) {
+    toast.error("Please select a date");
+    return;
+  }
+
+  setPending(true);
+  try {
+    const res = await fetch("/api/admin/inquests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        teacherId: filterTeacherId,
+        academicYearId: filterYearId,
+        inquestType: form.inquestType,
+        reason: form.reason,
+        details: form.details,
+        teacherJobTitle: form.teacherJobTitle,
+        teacherSpecialty: form.teacherSpecialty,
+        teacherSchool: form.teacherSchool,
+        clarificationRequest: form.clarificationRequest,
+
+        // ── The important part ───────────────────────────────
+        date: eventDate,           // ← send unified field name
+        // OR (if you prefer explicit names in the database):
+        // absenceDate: form.inquestType === "ABSENT" ? eventDate : null,
+        // negligenceDate: form.inquestType === "NEGLIGENCE" ? eventDate : null,
+        // ──────────────────────────────────────────────────────
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || "Failed to create inquest");
     }
 
-    setPending(true);
-    try {
-      const res = await fetch("/api/admin/inquests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teacherId: filterTeacherId,
-          academicYearId: filterYearId,
-          ...form,
-        }),
-      });
+    toast.success(t("success.created"));
+    setForm(initialFormState);
+    setShowForm(false);
 
-      if (!res.ok) throw new Error();
-
-      toast.success(t("success.created"));
-      setForm(initialFormState);
-      setShowForm(false);
-
-      setAllInquests(await fetch("/api/admin/inquests").then((r) => r.json()));
-    } catch {
-      toast.error(t("errors.create"));
-    } finally {
-      setPending(false);
-    }
-  };
+    // Refresh list
+    const updated = await fetch("/api/admin/inquests").then((r) => r.json());
+    setAllInquests(updated);
+  } catch (err: any) {
+    toast.error(err.message || t("errors.create"));
+  } finally {
+    setPending(false);
+  }
+};
 
   /* ---------------- PDF ---------------- */
   const generatePDF = async () => {

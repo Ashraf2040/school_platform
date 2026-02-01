@@ -17,6 +17,7 @@
     "featureNotifyTitle": "Smart Notifications",
     "featureNotifyText": "New inquests become notifications for the relevant teacher."
   },
+ 
   "AdminHome":{
 
   "adminDashboardTitle": "Admin Dashboard",
@@ -137,7 +138,7 @@
   "InquestCreateForm": {
     "title": "Create New Inquest",
     "cancel": "Cancel",
-
+     "incidentDate": "Date of incident / negligence",
     "academicYear": "Academic Year",
     "selectYear": "Select Year...",
     "current": "Current",

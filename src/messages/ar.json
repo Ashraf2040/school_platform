@@ -149,7 +149,7 @@
   "InquestCreateForm": {
     "title": "إنشاء مساءلة جديد",
     "cancel": "إلغاء",
-
+"incidentDate": "تاريخ الواقعة / الإهمال",
     "academicYear": "السنة الدراسية",
     "selectYear": "اختر السنة...",
     "current": "الحالية",
