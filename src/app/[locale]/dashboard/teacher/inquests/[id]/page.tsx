@@ -205,6 +205,7 @@ export default function TeacherInquestDetail() {
                   day: "numeric",
                 })}
               </p>
+         
             </div>
           </div>
         </div>

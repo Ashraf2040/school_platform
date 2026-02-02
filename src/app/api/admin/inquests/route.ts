@@ -1,12 +1,8 @@
-// Updated /api/admin/inquests/route.ts
+// app/api/admin/inquests/route.ts
 import { NextResponse } from "next/server";
-
-import { PrismaPg } from "@prisma/adapter-pg";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
-
-
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -33,6 +29,8 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
+  
+  // 1. DESTRUCTURE: Added 'date' here
   const {
     teacherId,
     academicYearId,
@@ -43,16 +41,18 @@ export async function POST(req: Request) {
     teacherSpecialty,
     teacherSchool,
     clarificationRequest,
+    date, 
   } = body;
 
-  if (!teacherId || !academicYearId || !inquestType || !reason) {
+  // 2. VALIDATE: Added check for date
+  if (!teacherId || !academicYearId || !inquestType || !reason || !date) {
     return NextResponse.json(
-      { error: "Missing required fields" },
+      { error: "Missing required fields (including date)" },
       { status: 400 }
     );
   }
 
-  // Step 1: Create the inquest first
+  // Step 1: Create the inquest
   const inquest = await prisma.inquest.create({
     data: {
       teacherId,
@@ -66,6 +66,9 @@ export async function POST(req: Request) {
       clarificationRequest,
       createdById: session.user.id,
       status: "PENDING",
+      
+      // 3. SAVE: Pass the date to the database here
+      date: new Date(date), 
     },
   });
 
@@ -78,7 +81,7 @@ export async function POST(req: Request) {
           ? "New absent inquest"
           : "New negligence inquest",
       body: reason,
-      link: `/dashboard/teacher/inquests/${inquest.id}`, // Now safe to use!
+      link: `/dashboard/teacher/inquests/${inquest.id}`,
     },
   });
 
