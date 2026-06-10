@@ -181,7 +181,7 @@ export default function Sidebar({ role }: { role: string }) {
                       : "تقارير التقييم الاسبوعية"
                   }`}
                 </SidebarLink>
-                {/* <SidebarLink
+                { <SidebarLink
                   href="/dashboard/attendanceAdmin"
                   icon={icons.announcements}
                   active={isActive("/dashboard/attendanceAdmin")}
@@ -189,7 +189,7 @@ export default function Sidebar({ role }: { role: string }) {
                   locale={locale}
                 >
                   {`${locale === "en" ? "Attendance" : "الحضور والغياب"}`}
-                </SidebarLink> */}
+                </SidebarLink> }
               </>
             )}
 
@@ -247,7 +247,20 @@ export default function Sidebar({ role }: { role: string }) {
                       : "تقارير التقييم الاسبوعية"
                   }`}
                 </SidebarLink>
-                {/* <SidebarLink
+                <SidebarLink
+                  href="/dashboard/teacher/createLessonPlan"
+                  icon={icons.lessons}
+                  active={isActive("/dashboard/teacher/createLessonPlan")}
+                  onClick={() => setIsOpen(false)}
+                  locale={locale}
+                >
+                  {`${
+                    locale === "en"
+                      ? "Create Lesson Plan"
+                      : "إنشاء خطة درس"
+                  }`}
+                </SidebarLink>
+                { <SidebarLink
                   href="/dashboard/attendance"
                   icon={icons.announcements}
                   active={isActive("/dashboard/attendance")}
@@ -255,7 +268,7 @@ export default function Sidebar({ role }: { role: string }) {
                   locale={locale}
                 >
                   {`${locale === "en" ? "Attendance" : "الحضور والغياب"}`}
-                </SidebarLink> */}
+                </SidebarLink> }
               </>
             )}
 

@@ -38,6 +38,8 @@ model User {
   absences               Substitution[]          @relation("AbsentTeacher")
   replacements           Substitution[]          @relation("ReplacementTeacher")
   weeklyReports          WeeklyReport[]
+
+  lessonPlans LessonPlan[]
 }
 
 model PasswordResetToken {
@@ -60,6 +62,8 @@ model Class {
   lessons       Lesson[]
   schedules     Schedule[]
   substitutions Substitution[]
+
+  lessonPlans LessonPlan[]
 }
 
 model Subject {
@@ -73,6 +77,8 @@ model Subject {
   teachers        SubjectOnTeacher[]
   substitutions   Substitution[]
   weeklyPlanItems WeeklyPlanItem[]
+
+  lessonPlans LessonPlan[]
 }
 
 model ClassOnTeacher {
@@ -392,4 +398,84 @@ enum LeaveStatus {
   PENDING
   APPROVED
   REJECTED
+}
+model LessonPlan {
+  id          String   @id @default(uuid())
+  teacherId   String
+  classId     String
+  grade  String?
+  subjectId   String
+  date        DateTime? // or String if you prefer to store "18-22/1/2026"
+  unit        String
+  lessonTopic String
+  // Core educational content (long text fields)
+  studentOutcomes     String   @db.Text
+  vocabularyKeyTerms  String   @db.Text
+  warmupDescription   String?  @db.Text
+  instructionalDescription String? @db.Text
+  proceduresDescription String?  @db.Text
+  assessmentDescription String?  @db.Text
+  closure             String?  @db.Text
+  higherOrderThinking String?  @db.Text
+
+  // Materials (simple booleans + short strings)
+  materialsText               Boolean @default(false)
+  materialsTextPage           String?
+  materialsBoard              Boolean @default(false)
+  materialsOverheadProjector  Boolean @default(false)
+  materialsVideo              Boolean @default(false)
+  materialsLab                Boolean @default(false)
+  materialsWebsite            String?
+  materialsStudentBook        Boolean @default(false)
+  materialsOtherResources     String?
+
+  // Warm-up checkboxes
+  warmupQuestions    Boolean @default(false)
+  warmupStories      Boolean @default(false)
+  warmupRevision     Boolean @default(false)
+  warmupVideo        Boolean @default(false)
+  warmupHomework     Boolean @default(false)
+
+  // Instructional Delivery checkboxes
+  instrReading           Boolean @default(false)
+  instrDiscussion        Boolean @default(false)
+  instrProblemSolving    Boolean @default(false)
+  instrCriticalThinking  Boolean @default(false)
+  instrWriting           Boolean @default(false)
+  instrIndividual        Boolean @default(false)
+  instrWorksheets        Boolean @default(false)
+  instrGroupWork         Boolean @default(false)
+
+  // Procedures / Teaching Methods
+  procDemonstration       Boolean @default(false)
+  procLecture             Boolean @default(false)
+  procQa                  Boolean @default(false)
+  procReview              Boolean @default(false)
+  procTest                Boolean @default(false)
+  procIndividual          Boolean @default(false)
+  procBrainstorming       Boolean @default(false)
+  procProblemSolving      Boolean @default(false)
+  procCooperativeLearning Boolean @default(false)
+  procDebating            Boolean @default(false)
+  procLearningByDoing     Boolean @default(false)
+  procRolePlaying         Boolean @default(false)
+
+  // Assessment
+  assessTestQuiz            Boolean @default(false)
+  assessHomework            Boolean @default(false)
+  assessTeacherObservation  Boolean @default(false)
+  assessProject             Boolean @default(false)
+  assessRevision            Boolean @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher   User    @relation(fields: [teacherId],   references: [id], onDelete: Cascade)
+  class     Class   @relation(fields: [classId],    references: [id])
+  subject   Subject @relation(fields: [subjectId],  references: [id])
+
+  @@index([teacherId])
+  @@index([classId])
+  @@index([subjectId])
+  @@index([date])
 }
