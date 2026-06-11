@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import Papa from 'papaparse';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
@@ -420,7 +421,7 @@ const subjectOrder = [
 ];
 
 // Helper to get the subject's order index (default to large number for unknown subjects)
-function subjectSortIndex(subjectName) {
+function subjectSortIndex(subjectName: string) {
   const idx = subjectOrder.findIndex(
     key => subjectName.trim().toLowerCase().startsWith(key.trim().toLowerCase())
   );
